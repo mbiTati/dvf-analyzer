@@ -1,0 +1,1829 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DVF Analyzer v3 — SuPrealty</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300&family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg: #06080d;
+  --s1: #0d1018;
+  --s2: #131720;
+  --s3: #191e28;
+  --border: #1e2530;
+  --border2: #252d3a;
+  --gold: #d4a843;
+  --gold2: #f0c860;
+  --blue: #4a8fff;
+  --green: #3ecf8e;
+  --red: #ff5757;
+  --purple: #9b72ff;
+  --text: #dce3ef;
+  --muted: #5a6478;
+  --muted2: #3a4255;
+  --mono: 'IBM Plex Mono', monospace;
+  --display: 'Bebas Neue', sans-serif;
+  --body: 'Barlow', sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--mono);
+  font-size:12px;
+  line-height:1.5;
+  min-height:100vh;
+}
+
+/* BG TEXTURE */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(74,143,255,0.05) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(212,168,67,0.04) 0%, transparent 60%);
+  pointer-events:none;z-index:0;
+}
+
+.wrap{position:relative;z-index:1;max-width:1600px;margin:0 auto;padding:0 28px 100px;}
+
+/* ─── HEADER ─── */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:22px 0 18px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:36px;
+  gap:16px;flex-wrap:wrap;
+}
+.logo-block{display:flex;align-items:baseline;gap:10px;}
+.logo{font-family:var(--display);font-size:28px;letter-spacing:2px;color:var(--text);}
+.logo em{color:var(--gold);font-style:normal;}
+.logo-ver{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;padding:2px 6px;border:1px solid var(--border2);}
+.header-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pill{
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 10px;border:1px solid var(--border2);color:var(--muted);
+}
+.pill.active{border-color:var(--green);color:var(--green);}
+
+/* ─── DROP ZONE ─── */
+#dropzone{
+  border:1px dashed var(--border2);
+  background:var(--s1);
+  padding:48px 32px;
+  text-align:center;
+  cursor:pointer;
+  transition:all 0.2s;
+  position:relative;
+  overflow:hidden;
+}
+#dropzone::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 50% 100%, rgba(212,168,67,0.05) 0%, transparent 70%);
+  pointer-events:none;
+}
+#dropzone:hover,#dropzone.drag{border-color:var(--gold);background:rgba(212,168,67,0.03);}
+.dz-icon{font-family:var(--display);font-size:48px;color:var(--gold);opacity:0.5;line-height:1;margin-bottom:12px;}
+.dz-title{font-family:var(--body);font-size:20px;font-weight:700;margin-bottom:6px;}
+.dz-sub{color:var(--muted);font-size:11px;line-height:1.8;}
+.dz-sub b{color:var(--gold2);}
+#fileInput{display:none;}
+
+/* FILE LIST */
+#fileList{display:none;margin-top:16px;gap:8px;flex-direction:column;}
+#fileList.vis{display:flex;}
+.file-item{
+  background:var(--s2);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;gap:12px;
+}
+.file-name{font-size:11px;color:var(--text);flex:1;}
+.file-meta{font-size:10px;color:var(--muted);white-space:nowrap;}
+.file-badge{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:2px 6px;border:1px solid;white-space:nowrap;
+}
+.file-badge.ok{border-color:var(--green);color:var(--green);}
+.file-badge.loading{border-color:var(--gold);color:var(--gold);}
+.file-rm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0 4px;}
+.file-rm:hover{color:var(--red);}
+
+/* ─── CONTROLS ─── */
+#controls{display:none;margin-top:20px;}
+#controls.vis{display:block;}
+.ctrl-bar{
+  background:var(--s1);border:1px solid var(--border);
+  padding:16px 20px;display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;
+}
+.ctrl-group{display:flex;flex-direction:column;gap:5px;min-width:140px;}
+.ctrl-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
+input[type=text],select{
+  background:var(--s2);border:1px solid var(--border2);
+  color:var(--text);padding:7px 10px;
+  font-family:var(--mono);font-size:11px;
+  outline:none;width:100%;appearance:none;
+  transition:border-color 0.15s;
+}
+input[type=text]:focus,select:focus{border-color:var(--gold);}
+.btn-primary{
+  background:var(--gold);color:#06080d;
+  border:none;padding:8px 22px;
+  font-family:var(--body);font-weight:700;font-size:12px;
+  letter-spacing:0.5px;text-transform:uppercase;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;flex-shrink:0;
+}
+.btn-primary:hover{background:var(--gold2);transform:translateY(-1px);}
+.btn-ghost{
+  background:transparent;border:1px solid var(--border2);
+  color:var(--muted);padding:8px 16px;
+  font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;letter-spacing:0.5px;
+}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold);}
+.btn-sm{
+  background:var(--s3);border:1px solid var(--border2);
+  color:var(--muted);padding:5px 12px;
+  font-family:var(--mono);font-size:10px;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.btn-sm:hover{border-color:var(--blue);color:var(--blue);}
+
+/* ─── STATUS ─── */
+#statusBar{
+  display:none;background:var(--s2);
+  border:1px solid var(--border);border-left:2px solid var(--gold);
+  padding:10px 16px;margin-top:12px;
+  font-size:11px;color:var(--muted);
+  align-items:center;gap:10px;
+}
+#statusBar.vis{display:flex;}
+.sdot{width:5px;height:5px;background:var(--gold);border-radius:50%;flex-shrink:0;animation:blink 1.4s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+#dedupeInfo{
+  display:none;background:rgba(62,207,142,0.06);
+  border:1px solid rgba(62,207,142,0.2);
+  padding:8px 14px;margin-top:8px;font-size:11px;color:var(--green);
+}
+#dedupeInfo.vis{display:block;}
+
+/* ─── RESULTS ─── */
+#results{display:none;margin-top:44px;}
+#results.vis{display:block;}
+
+/* SECTION */
+.sec{margin-bottom:40px;}
+.sec-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  padding-bottom:8px;margin-bottom:18px;
+  border-bottom:1px solid var(--border);
+  gap:12px;flex-wrap:wrap;
+}
+.sec-title{font-family:var(--display);font-size:18px;letter-spacing:1px;color:var(--text);}
+.sec-sub{font-size:10px;color:var(--muted);letter-spacing:0.5px;}
+.sec-actions{display:flex;gap:8px;}
+
+/* ─── SUMMARY GRID ─── */
+.sum-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+  gap:1px;background:var(--border);
+  margin-bottom:4px;
+}
+.sum-card{
+  background:var(--s1);padding:18px 16px 14px;
+  position:relative;overflow:hidden;
+  transition:background 0.15s;
+}
+.sum-card:hover{background:var(--s2);}
+.sum-card::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:2px;
+  background:var(--gold);opacity:0;transition:opacity 0.2s;
+}
+.sum-card:hover::after{opacity:1;}
+.sum-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.sum-val{font-family:var(--display);font-size:28px;letter-spacing:0.5px;line-height:1;margin-bottom:3px;}
+.sum-sub{font-size:10px;color:var(--muted);}
+.c-gold{color:var(--gold);}
+.c-blue{color:var(--blue);}
+.c-green{color:var(--green);}
+.c-red{color:var(--red);}
+.c-purple{color:var(--purple);}
+
+/* ─── PRIX PLAFOND CARDS ─── */
+.plafond-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:12px;margin-bottom:8px;
+}
+.plafond-card{
+  background:var(--s1);border:1px solid var(--border);
+  padding:20px;position:relative;overflow:hidden;
+}
+.plafond-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.plafond-card.t-maison::before{background:var(--blue);}
+.plafond-card.t-appart::before{background:var(--gold);}
+.plafond-card.t-terrain::before{background:var(--green);}
+.plafond-card.t-local::before{background:var(--red);}
+.plafond-card.t-dep::before{background:var(--purple);}
+.plafond-card.t-autre::before{background:var(--muted);}
+
+.plafond-type{font-family:var(--body);font-weight:700;font-size:14px;margin-bottom:14px;}
+.plafond-main{
+  display:flex;align-items:baseline;gap:6px;margin-bottom:14px;
+  padding-bottom:12px;border-bottom:1px solid var(--border);
+}
+.plafond-val{font-family:var(--display);font-size:36px;letter-spacing:0.5px;}
+.plafond-unit{font-size:12px;color:var(--muted);}
+.plafond-method{
+  font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.plafond-rows{}
+.pr{display:flex;justify-content:space-between;padding:3px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.03);}
+.pr:last-child{border:none;}
+.pr-k{color:var(--muted);}
+.pr-v{font-variant-numeric:tabular-nums;}
+.plafond-alert{
+  margin-top:10px;padding:6px 8px;
+  background:rgba(255,87,87,0.08);border-left:2px solid var(--red);
+  font-size:10px;color:var(--muted);
+}
+
+/* ─── ZONE TABLE ─── */
+.tbl-wrap{background:var(--s1);border:1px solid var(--border);overflow:auto;}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  background:var(--s2);padding:9px 12px;
+  text-align:left;font-size:9px;letter-spacing:1.5px;
+  text-transform:uppercase;color:var(--muted);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;cursor:pointer;user-select:none;
+}
+thead th:hover{color:var(--gold);}
+thead th.active-sort{color:var(--gold);}
+tbody tr{border-bottom:1px solid var(--border);transition:background 0.1s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:var(--s2);}
+td{padding:8px 12px;font-size:11px;white-space:nowrap;vertical-align:middle;}
+.td-r{text-align:right;font-variant-numeric:tabular-nums;}
+.td-bold{font-family:var(--body);font-weight:600;font-size:12px;}
+.td-muted{color:var(--muted);}
+
+/* SCORE BAR */
+.score-bar{display:flex;align-items:center;gap:6px;width:120px;}
+.score-track{flex:1;height:4px;background:var(--border2);position:relative;}
+.score-fill{height:100%;transition:width 0.4s;}
+.score-txt{font-size:10px;font-variant-numeric:tabular-nums;width:24px;text-align:right;}
+
+/* TAG */
+.tag{
+  display:inline-block;padding:1px 6px;
+  font-size:9px;letter-spacing:0.5px;text-transform:uppercase;
+  border:1px solid;margin:1px;
+}
+.tag-M{border-color:rgba(74,143,255,0.4);color:var(--blue);}
+.tag-A{border-color:rgba(212,168,67,0.4);color:var(--gold);}
+.tag-T{border-color:rgba(62,207,142,0.4);color:var(--green);}
+.tag-L{border-color:rgba(255,87,87,0.4);color:var(--red);}
+.tag-D{border-color:rgba(155,114,255,0.4);color:var(--purple);}
+.tag-X{border-color:rgba(90,100,120,0.4);color:var(--muted);}
+
+/* ZONE PLAFOND MINI */
+.zp-cell{display:flex;flex-direction:column;gap:2px;}
+.zp-row{display:flex;align-items:center;gap:4px;font-size:10px;}
+.zp-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0;}
+
+/* ─── DISTRIBUTION ─── */
+.dist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;}
+.dist-card{background:var(--s1);border:1px solid var(--border);padding:18px;}
+.dist-title{font-family:var(--body);font-weight:600;font-size:13px;margin-bottom:14px;}
+.hist{display:flex;align-items:flex-end;gap:2px;height:60px;margin-bottom:6px;}
+.hist-bar{
+  flex:1;background:var(--s3);border-top:1px solid var(--border2);
+  position:relative;transition:background 0.15s;cursor:default;min-width:4px;
+}
+.hist-bar:hover{background:rgba(212,168,67,0.3);}
+.hist-bar.plafond-marker{background:rgba(255,87,87,0.3);border-top-color:var(--red);}
+.hist-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);}
+.dist-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);}
+.ds{font-size:10px;}
+.ds-k{color:var(--muted);margin-right:4px;}
+.ds-v{font-variant-numeric:tabular-nums;}
+
+/* ─── TIMELINE ─── */
+.timeline-wrap{background:var(--s1);border:1px solid var(--border);padding:20px;}
+.tl-chart{display:flex;align-items:flex-end;gap:2px;height:70px;position:relative;}
+.tl-bar{
+  flex:1;background:var(--s3);border-top:2px solid var(--border2);
+  position:relative;min-width:6px;cursor:default;transition:all 0.15s;
+}
+.tl-bar:hover{background:rgba(212,168,67,0.2);border-top-color:var(--gold);}
+.tl-bar[data-tip]:hover::after{
+  content:attr(data-tip);
+  position:absolute;bottom:calc(100%+8px);left:50%;transform:translateX(-50%);
+  background:var(--s2);border:1px solid var(--border2);
+  padding:4px 8px;font-size:10px;color:var(--text);
+  white-space:nowrap;z-index:10;pointer-events:none;
+}
+.tl-labels{display:flex;justify-content:space-between;margin-top:6px;font-size:9px;color:var(--muted);}
+.tl-source-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;font-size:10px;}
+.tl-src{display:flex;align-items:center;gap:5px;}
+.tl-src-dot{width:8px;height:8px;flex-shrink:0;}
+
+/* ─── ANOMALIES ─── */
+.anomaly{
+  background:rgba(255,87,87,0.05);
+  border-left:2px solid var(--red);
+  padding:10px 14px;margin-bottom:6px;
+  font-size:11px;color:var(--muted);
+}
+.anomaly b{color:var(--red);}
+.anomaly.warn{
+  border-left-color:var(--gold);
+  background:rgba(212,168,67,0.05);
+}
+.anomaly.warn b{color:var(--gold);}
+
+/* ─── EXPORT ─── */
+.export-block{
+  background:var(--s1);border:1px solid var(--border);padding:22px;
+}
+.exp-title{font-family:var(--body);font-weight:700;font-size:14px;margin-bottom:6px;}
+.exp-sub{color:var(--muted);font-size:11px;margin-bottom:16px;line-height:1.7;}
+.exp-btns{display:flex;gap:10px;flex-wrap:wrap;}
+pre#jsonPre{
+  background:var(--bg);border:1px solid var(--border);
+  padding:16px;font-size:10px;color:var(--muted);
+  overflow:auto;max-height:320px;margin-top:14px;
+  display:none;line-height:1.7;
+}
+pre#jsonPre.vis{display:block;}
+
+/* TABS */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:20px;}
+.tab{
+  padding:8px 18px;font-family:var(--mono);font-size:10px;
+  letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);cursor:pointer;
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:all 0.15s;
+}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* TAB CONTENT */
+.tab-pane{display:none;}
+.tab-pane.active{display:block;}
+
+/* PROGRESS */
+#progress{
+  display:none;height:2px;background:var(--border);
+  margin-top:8px;overflow:hidden;
+}
+#progress.vis{display:block;}
+#progressBar{height:100%;background:var(--gold);width:0;transition:width 0.3s;}
+
+/* ─── OPPORTUNITÉS ─── */
+.opp-legend{
+  display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;
+  background:var(--s1);border:1px solid var(--border);padding:14px 18px;
+}
+.opp-leg-item{display:flex;align-items:center;gap:8px;font-size:11px;}
+.opp-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.opp-dot.foncier{background:#9b72ff;}
+.opp-dot.renovation{background:#f0c860;}
+.opp-dot.demol{background:#ff5757;}
+.opp-dot.atypique{background:#3ecf8e;}
+.opp-dot.normal{background:var(--border2);}
+
+.opp-summary-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:1px;background:var(--border);margin-bottom:24px;
+}
+.opp-sum-card{
+  background:var(--s1);padding:16px 18px;
+  border-top:2px solid transparent;
+}
+.opp-sum-card.c-foncier{border-top-color:#9b72ff;}
+.opp-sum-card.c-renovation{border-top-color:#f0c860;}
+.opp-sum-card.c-demol{border-top-color:#ff5757;}
+.opp-sum-card.c-atypique{border-top-color:#3ecf8e;}
+.opp-sum-label{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.opp-sum-val{font-family:var(--display);font-size:30px;margin-bottom:2px;}
+.opp-sum-sub{font-size:10px;color:var(--muted);}
+
+.opp-badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:2px 8px;font-size:9px;letter-spacing:0.8px;
+  text-transform:uppercase;border:1px solid;font-weight:600;
+}
+.opp-badge.foncier{border-color:rgba(155,114,255,0.5);color:#9b72ff;background:rgba(155,114,255,0.08);}
+.opp-badge.renovation{border-color:rgba(240,200,96,0.5);color:#f0c860;background:rgba(240,200,96,0.08);}
+.opp-badge.demol{border-color:rgba(255,87,87,0.5);color:#ff5757;background:rgba(255,87,87,0.08);}
+.opp-badge.atypique{border-color:rgba(62,207,142,0.5);color:#3ecf8e;background:rgba(62,207,142,0.08);}
+.opp-badge.normal{border-color:var(--border2);color:var(--muted);background:transparent;}
+
+.confidence-pip{
+  display:inline-flex;gap:2px;align-items:center;
+}
+.pip{width:6px;height:6px;border-radius:1px;background:var(--border2);}
+.pip.on{background:var(--gold);}
+
+.opp-insight{
+  background:var(--s1);border:1px solid var(--border);
+  border-left:3px solid var(--gold);
+  padding:14px 18px;margin-bottom:12px;
+  font-size:11px;line-height:1.8;
+}
+.opp-insight-title{
+  font-family:var(--body);font-weight:700;font-size:13px;
+  color:var(--gold);margin-bottom:6px;
+}
+.opp-commune-alert{
+  background:rgba(155,114,255,0.06);
+  border:1px solid rgba(155,114,255,0.2);
+  padding:12px 16px;margin-bottom:8px;font-size:11px;
+}
+.opp-commune-title{color:#9b72ff;font-weight:600;margin-bottom:4px;}
+
+@media(max-width:768px){
+  .sum-grid{grid-template-columns:repeat(2,1fr);}
+  .plafond-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<header>
+  <div class="logo-block">
+    <div class="logo">Su<em>Prealty</em></div>
+    <div class="logo-ver">DVF Analyzer v3</div>
+  </div>
+  <div class="header-right">
+    <div class="pill" id="pillFiles">0 fichier</div>
+    <div class="pill" id="pillRows">— transactions</div>
+    <div class="pill active" id="pillDedup" style="display:none">Dédupliqué ✓</div>
+  </div>
+</header>
+
+<!-- DROP ZONE -->
+<div id="dropzone" onclick="document.getElementById('fileInput').click()">
+  <div class="dz-icon">⬡</div>
+  <div class="dz-title">Déposer un ou plusieurs fichiers DVF</div>
+  <div class="dz-sub">
+    Formats acceptés : <b>CSV DVF standard</b> (data.gouv.fr, etalab, exports départementaux)<br>
+    Multi-zones : déposez plusieurs fichiers simultanément pour une analyse consolidée<br>
+    Déduplication automatique des mutations en plusieurs lots
+  </div>
+  <input type="file" id="fileInput" accept=".csv,.txt" multiple>
+</div>
+
+<!-- FILE LIST -->
+<div id="fileList"></div>
+
+<!-- PROGRESS -->
+<div id="progress"><div id="progressBar"></div></div>
+
+<!-- STATUS -->
+<div id="statusBar"><div class="sdot"></div><span id="statusTxt">Chargement…</span></div>
+<div id="dedupeInfo"></div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <div class="ctrl-bar">
+    <div class="ctrl-group">
+      <div class="ctrl-label">Commune / zone</div>
+      <input type="text" id="fCommune" placeholder="Ex : ANNECY">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Section cadastrale</div>
+      <input type="text" id="fSection" placeholder="Ex : AI, AB…">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Type de bien</div>
+      <select id="fType">
+        <option value="">Tous</option>
+        <option>Maison</option>
+        <option>Appartement</option>
+        <option>Terrain</option>
+        <option>Local industriel. commercial ou assimilé</option>
+        <option>Dépendance</option>
+      </select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Année</div>
+      <select id="fYear"><option value="">Toutes</option></select>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Surface min m²</div>
+      <input type="text" id="fSmin" placeholder="20">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Surface max m²</div>
+      <input type="text" id="fSmax" placeholder="500">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-label">Méthode plafond</div>
+      <select id="fPlafond">
+        <option value="iqr">IQR × 1.5 (outliers)</option>
+        <option value="p95">Percentile 95</option>
+        <option value="p90">Percentile 90</option>
+        <option value="2std">Moy + 2σ (std)</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="runAnalysis()">Analyser</button>
+    <button class="btn-ghost" onclick="resetFilters()">Reset</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('vue')">Vue d'ensemble</div>
+    <div class="tab" onclick="switchTab('plafond')">Prix Plafonds</div>
+    <div class="tab" onclick="switchTab('zones')">Par Zone / Commune</div>
+    <div class="tab" onclick="switchTab('distrib')">Distributions</div>
+    <div class="tab" onclick="switchTab('opps')" id="tabOpps">⬡ Opportunités</div>
+    <div class="tab" onclick="switchTab('anomalies')">Signaux</div>
+    <div class="tab" onclick="switchTab('export')">Export Supabase</div>
+  </div>
+
+  <!-- TAB: VUE D'ENSEMBLE -->
+  <div class="tab-pane active" id="t-vue">
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">Marché global</div>
+        <div class="sec-sub" id="scopeLabel"></div>
+      </div>
+      <div class="sum-grid" id="sumGrid"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><div class="sec-title">Volume temporel</div></div>
+      <div class="timeline-wrap">
+        <div class="tl-chart" id="tlChart"></div>
+        <div class="tl-labels" id="tlLabels"></div>
+        <div class="tl-source-legend" id="tlLegend"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: PRIX PLAFONDS -->
+  <div class="tab-pane" id="t-plafond">
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">Prix Plafonds par Type</div>
+        <div class="sec-sub">Valeur maximale retenue — au-delà = atypique</div>
+      </div>
+      <div class="plafond-grid" id="plafondByType"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">Prix Plafonds par Zone × Type</div>
+        <div class="sec-sub">Croisement section cadastrale ou commune × type de bien</div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="tblZonePlafond">
+          <thead>
+            <tr>
+              <th>Zone / Commune</th>
+              <th>Section</th>
+              <th class="td-r">Nb ventes</th>
+              <th class="td-r">Type dominant</th>
+              <th class="td-r">Plafond Maison €/m²</th>
+              <th class="td-r">Plafond Appart €/m²</th>
+              <th class="td-r">Plafond Terrain €/m²</th>
+              <th class="td-r">Médiane globale €/m²</th>
+              <th class="td-r">Score marché</th>
+            </tr>
+          </thead>
+          <tbody id="bodyZonePlafond"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: ZONES / COMMUNES -->
+  <div class="tab-pane" id="t-zones">
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">Analyse par commune</div>
+        <div class="sec-actions">
+          <button class="btn-sm" onclick="sortZones('nb')">Trier liquidité</button>
+          <button class="btn-sm" onclick="sortZones('pm2')">Trier €/m²</button>
+          <button class="btn-sm" onclick="sortZones('score')">Trier score</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="tblCommune">
+          <thead>
+            <tr>
+              <th onclick="sortZones('commune')">Commune</th>
+              <th onclick="sortZones('source')">Source</th>
+              <th class="td-r" onclick="sortZones('nb')">Transactions</th>
+              <th class="td-r" onclick="sortZones('pm2')">€/m² médian</th>
+              <th class="td-r" onclick="sortZones('pm2p10')">€/m² P10</th>
+              <th class="td-r" onclick="sortZones('pm2p90')">€/m² P90</th>
+              <th class="td-r" onclick="sortZones('plafond')">Plafond €/m²</th>
+              <th class="td-r" onclick="sortZones('prixMed')">Prix médian</th>
+              <th class="td-r" onclick="sortZones('surfMed')">Surf. méd.</th>
+              <th>Types</th>
+              <th onclick="sortZones('score')">Score marché</th>
+            </tr>
+          </thead>
+          <tbody id="bodyCommune"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="sec" style="margin-top:32px;">
+      <div class="sec-head">
+        <div class="sec-title">Analyse par section cadastrale</div>
+        <div class="sec-sub">Découpage fin par zone géographique intra-commune</div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="tblSection">
+          <thead>
+            <tr>
+              <th>Commune</th>
+              <th>Section</th>
+              <th class="td-r">Transactions</th>
+              <th class="td-r">€/m² médian</th>
+              <th class="td-r">€/m² P10</th>
+              <th class="td-r">€/m² P90</th>
+              <th class="td-r">Plafond €/m²</th>
+              <th class="td-r">Prix médian</th>
+              <th>Types</th>
+            </tr>
+          </thead>
+          <tbody id="bodySection"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: DISTRIBUTIONS -->
+  <div class="tab-pane" id="t-distrib">
+    <div class="sec">
+      <div class="sec-head"><div class="sec-title">Distribution €/m² par type</div></div>
+      <div class="dist-grid" id="distGrid"></div>
+    </div>
+  </div>
+
+  <!-- TAB: OPPORTUNITÉS -->
+  <div class="tab-pane" id="t-opps">
+    <div class="sec">
+      <div class="sec-head">
+        <div class="sec-title">Détection d'Opportunités</div>
+        <div class="sec-sub">Signaux faibles — classification automatique par pattern de transaction</div>
+      </div>
+
+      <div class="opp-legend">
+        <div class="opp-leg-item"><div class="opp-dot foncier"></div><span><b style="color:#9b72ff">Foncier déguisé</b> — maison vendue au prix du terrain (bâti sans valeur)</span></div>
+        <div class="opp-leg-item"><div class="opp-dot renovation"></div><span><b style="color:#f0c860">Rénovation probable</b> — prix très bas, bâti existant, surface correcte</span></div>
+        <div class="opp-leg-item"><div class="opp-dot demol"></div><span><b style="color:#ff5757">Démolition/reconstruction</b> — terrain important, bâti dérisoire</span></div>
+        <div class="opp-leg-item"><div class="opp-dot atypique"></div><span><b style="color:#3ecf8e">Atypique positif</b> — vente bien en dessous du marché, cause inconnue</span></div>
+      </div>
+
+      <div class="opp-summary-grid" id="oppSummaryGrid"></div>
+
+      <div id="oppInsights"></div>
+
+      <div class="sec-head" style="margin-top:28px;">
+        <div class="sec-title">Transactions classifiées</div>
+        <div class="sec-actions">
+          <button class="btn-sm" onclick="filterOppTable('')">Tout</button>
+          <button class="btn-sm" onclick="filterOppTable('foncier')">Foncier déguisé</button>
+          <button class="btn-sm" onclick="filterOppTable('renovation')">Rénovation</button>
+          <button class="btn-sm" onclick="filterOppTable('demol')">Démolition</button>
+          <button class="btn-sm" onclick="filterOppTable('atypique')">Atypique</button>
+          <button class="btn-ghost" onclick="doExportOpps()">⬇ Export CSV</button>
+        </div>
+      </div>
+      <div class="tbl-wrap">
+        <table id="tblOpps">
+          <thead>
+            <tr>
+              <th>Commune</th>
+              <th>Section</th>
+              <th>Type DVF</th>
+              <th class="td-r">Prix vente</th>
+              <th class="td-r">Surface bâti</th>
+              <th class="td-r">Surface terrain</th>
+              <th class="td-r">€/m²</th>
+              <th class="td-r">Méd. locale €/m²</th>
+              <th class="td-r">% / médiane</th>
+              <th>Classification</th>
+              <th>Confiance</th>
+              <th>Signaux</th>
+            </tr>
+          </thead>
+          <tbody id="bodyOpps"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SIGNAUX -->
+  <div class="tab-pane" id="t-anomalies">
+    <div class="sec">
+      <div class="sec-head"><div class="sec-title">Signaux & Anomalies</div></div>
+      <div id="anomaliesList"></div>
+    </div>
+  </div>
+
+  <!-- TAB: EXPORT -->
+  <div class="tab-pane" id="t-export">
+    <div class="export-block">
+      <div class="exp-title">Export Supabase — SuPrealty</div>
+      <div class="exp-sub">
+        JSON structuré compatible avec les tables <b>ANALYSE_SECTEUR</b>, <b>PRIX_MARCHE</b>, <b>TRANSACTIONS_DVF</b> et <b>PRIX_PLAFOND</b>.<br>
+        Prêt à insérer via API REST Supabase, WeWeb ou Make.com.
+      </div>
+      <div class="exp-btns">
+        <button class="btn-primary" onclick="doExportJSON()">⬇ JSON Supabase</button>
+        <button class="btn-ghost" onclick="doPreviewJSON()">Aperçu JSON</button>
+        <button class="btn-ghost" onclick="doExportCSV()">⬇ CSV Synthèse</button>
+        <button class="btn-ghost" onclick="doExportPlafonds()">⬇ CSV Plafonds</button>
+      </div>
+      <pre id="jsonPre"></pre>
+    </div>
+  </div>
+
+</div><!-- /results -->
+</div><!-- /wrap -->
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+const STATE = {
+  files: [],        // { name, size, rows: normalized[] }
+  merged: [],       // after merge + dedupe
+  filtered: [],     // after filters
+  communeData: [],
+  sectionData: [],
+  plafondMethod: 'iqr',
+  sortZoneCol: 'nb',
+  sortZoneDir: -1,
+};
+
+const SRC_COLORS = ['#4a8fff','#d4a843','#3ecf8e','#ff5757','#9b72ff','#f0c860'];
+
+// ═══════════════════════════════════════════════════════════
+// COLUMN MAPPING — DVF standard + variants
+// ═══════════════════════════════════════════════════════════
+const CM = {
+  idMut:    ['id_mutation','identifiant_mutation','id_vente'],
+  date:     ['date_mutation','Date mutation','date_transaction'],
+  nature:   ['nature_mutation','Nature mutation'],
+  valeur:   ['valeur_fonciere','Valeur fonciere','valeur_fonciere_totale'],
+  adresseN: ['adresse_numero','numero_voie'],
+  adresseV: ['adresse_nom_voie','nom_voie','voie'],
+  cp:       ['code_postal','Code postal'],
+  commune:  ['nom_commune','Commune','commune','libelle_commune'],
+  dept:     ['code_departement','departement'],
+  section:  ['section','Section cadastrale','section_prefixe','prefixe_section'],
+  numPlan:  ['numero_plan','numero_parcelle'],
+  nbLots:   ['nombre_lots','Nombre de lots'],
+  type:     ['type_local','Type local','type_bien'],
+  surface:  ['surface_reelle_bati','Surface reelle bati','surface_bati'],
+  surfTerr: ['surface_terrain','Surface terrain'],
+  nbPieces: ['nombre_pieces_principales','Nombre pieces principales'],
+  nbChamb:  ['nombre_main_baties','chambres'],
+};
+
+function fc(row, keys) {
+  const hdr = Object.keys(row);
+  for (const k of keys) {
+    const h = hdr.find(h => h.trim().toLowerCase().replace(/['\s]/g,'_').replace(/é|è|ê/g,'e') ===
+      k.toLowerCase().replace(/['\s]/g,'_').replace(/é|è|ê/g,'e'));
+    if (h !== undefined && row[h] !== undefined && row[h] !== '') return row[h];
+  }
+  return null;
+}
+
+function n(v) {
+  if (v===null||v===undefined||v==='') return null;
+  const f = parseFloat(String(v).replace(',','.').replace(/\s/g,''));
+  return isNaN(f) ? null : f;
+}
+
+// ═══════════════════════════════════════════════════════════
+// CSV PARSER
+// ═══════════════════════════════════════════════════════════
+function parseCSV(text) {
+  const first = text.slice(0,1000);
+  const delim = [',',';','|','\t'].reduce((b,d) => {
+    const c = (first.match(new RegExp('\\'+d,'g'))||[]).length;
+    return c > b.c ? {d,c} : b;
+  }, {d:',',c:0}).d;
+
+  const lines = text.split(/\r?\n/).filter(l=>l.trim());
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(delim).map(h=>h.trim().replace(/^["']|["']$/g,''));
+  return lines.slice(1).map(line => {
+    const vals = line.split(delim).map(v=>v.trim().replace(/^["']|["']$/g,''));
+    const row = {};
+    headers.forEach((h,i) => row[h] = vals[i]||'');
+    return row;
+  }).filter(r=>Object.values(r).some(v=>v));
+}
+
+// ═══════════════════════════════════════════════════════════
+// NORMALIZE
+// ═══════════════════════════════════════════════════════════
+function normalizeRow(r, sourceIdx) {
+  const idMut = fc(r, CM.idMut) || '';
+  const dateRaw = fc(r, CM.date) || '';
+  const valeur = n(fc(r, CM.valeur));
+  const commune = (fc(r, CM.commune)||'').toUpperCase().trim().replace(/\s+/g,' ');
+  const cp = fc(r, CM.cp)||'';
+  const dept = fc(r, CM.dept)||'';
+  const section = (fc(r, CM.section)||'').toUpperCase().trim();
+  const numPlan = fc(r, CM.numPlan)||'';
+  const type = (fc(r, CM.type)||'').trim();
+  const surface = n(fc(r, CM.surface));
+  const surfTerr = n(fc(r, CM.surfTerr));
+  const nbPieces = n(fc(r, CM.nbPieces));
+  const nbLots = n(fc(r, CM.nbLots));
+  const nature = fc(r, CM.nature)||'';
+  const adresseN = fc(r, CM.adresseN)||'';
+  const adresseV = fc(r, CM.adresseV)||'';
+  const adresse = `${adresseN} ${adresseV}`.trim();
+
+  // Effective surface
+  const effSurf = type === 'Terrain' ? (surfTerr||surface) : (surface||surfTerr);
+  const prixM2 = (valeur && effSurf && effSurf > 1) ? valeur/effSurf : null;
+
+  // Parse date
+  let year=null, month=null, yearMonth=null;
+  const dm = dateRaw.match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\/(\d{2})\/(\d{4})/);
+  if (dm) {
+    year = parseInt(dm[1]||dm[6]);
+    month = parseInt(dm[2]||dm[5]);
+    yearMonth = `${year}-${String(month).padStart(2,'0')}`;
+  }
+
+  // Dedupe key: mutation id preferred, else price+commune+date+type
+  const dedupeKey = idMut ||
+    `${commune}|${dateRaw}|${valeur}|${type}|${section}`;
+
+  return {
+    sourceIdx, idMut, dedupeKey,
+    commune, cp, dept, section, numPlan, adresse,
+    type, nature,
+    valeur, surface, surfTerr, effSurf, prixM2,
+    nbPieces, nbLots,
+    year, month, yearMonth, dateRaw,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEDUPLICATE
+// ═══════════════════════════════════════════════════════════
+function deduplicate(rows) {
+  // Group by dedupeKey — for same mutation split into lots, keep one record
+  const seen = new Map();
+  const dupes = [];
+  rows.forEach(r => {
+    if (seen.has(r.dedupeKey)) {
+      dupes.push(r);
+    } else {
+      seen.set(r.dedupeKey, r);
+    }
+  });
+  // For multi-lot mutations: if valeur was per lot, we might want to sum — 
+  // but DVF stores total value on each row for same id_mutation.
+  // Keep only unique mutation+type_local combos.
+  const unique = [...seen.values()];
+  return { unique, dupeCount: dupes.length };
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILE LOAD
+// ═══════════════════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', e => {
+  [...e.target.files].forEach(f => addFile(f));
+  e.target.value='';
+});
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  [...e.dataTransfer.files].forEach(f => addFile(f));
+});
+
+function addFile(file) {
+  const idx = STATE.files.length;
+  STATE.files.push({ name: file.name, size: file.size, rows: [], loaded: false });
+  renderFileList();
+  setStatus(`Lecture de ${file.name}…`);
+  const reader = new FileReader();
+  reader.onload = e => {
+    const raw = parseCSV(e.target.result);
+    STATE.files[idx].rows = raw.map(r => normalizeRow(r, idx));
+    STATE.files[idx].loaded = true;
+    renderFileList();
+    mergeAndAnalyze();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function removeFile(idx) {
+  STATE.files.splice(idx, 1);
+  STATE.files.forEach((f,i) => f.rows.forEach(r => r.sourceIdx = i));
+  renderFileList();
+  if (STATE.files.some(f=>f.loaded)) mergeAndAnalyze();
+  else { document.getElementById('results').classList.remove('vis'); }
+}
+
+function renderFileList() {
+  const fl = document.getElementById('fileList');
+  fl.innerHTML = STATE.files.map((f,i) => `
+    <div class="file-item">
+      <div class="file-name">${f.name}</div>
+      <div class="file-meta">${(f.size/1024).toFixed(0)} KB${f.loaded ? ' · '+f.rows.length.toLocaleString('fr')+' lignes' : ''}</div>
+      <div class="file-badge ${f.loaded?'ok':'loading'}">${f.loaded?'Chargé':'En cours…'}</div>
+      <button class="file-rm" onclick="removeFile(${i})">✕</button>
+    </div>`).join('');
+  fl.classList.toggle('vis', STATE.files.length > 0);
+  document.getElementById('pillFiles').textContent = `${STATE.files.length} fichier${STATE.files.length>1?'s':''}`;
+}
+
+function mergeAndAnalyze() {
+  // Merge all loaded files
+  const allRows = STATE.files.filter(f=>f.loaded).flatMap(f=>f.rows)
+    .filter(r => r.commune && r.valeur && r.valeur > 0);
+
+  const { unique, dupeCount } = deduplicate(allRows);
+  STATE.merged = unique;
+
+  // Show dedupe info
+  document.getElementById('pillRows').textContent = `${unique.length.toLocaleString('fr')} transactions`;
+  document.getElementById('pillDedup').style.display = dupeCount > 0 ? 'block' : 'none';
+
+  const di = document.getElementById('dedupeInfo');
+  if (dupeCount > 0) {
+    di.textContent = `✓ Déduplication : ${dupeCount.toLocaleString('fr')} doublon(s) supprimé(s) sur ${allRows.length.toLocaleString('fr')} lignes brutes → ${unique.length.toLocaleString('fr')} mutations uniques`;
+    di.classList.add('vis');
+  } else di.classList.remove('vis');
+
+  // Populate year filter
+  const years = [...new Set(unique.map(r=>r.year).filter(Boolean))].sort((a,b)=>b-a);
+  const ys = document.getElementById('fYear');
+  ys.innerHTML = '<option value="">Toutes</option>' + years.map(y=>`<option>${y}</option>`).join('');
+
+  setStatus(`${unique.length.toLocaleString('fr')} transactions uniques chargées`);
+  document.getElementById('controls').classList.add('vis');
+  runAnalysis();
+}
+
+// ═══════════════════════════════════════════════════════════
+// FILTERS + ANALYSIS
+// ═══════════════════════════════════════════════════════════
+function resetFilters() {
+  ['fCommune','fSection','fSmin','fSmax'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('fType').value='';
+  document.getElementById('fYear').value='';
+  runAnalysis();
+}
+
+function runAnalysis() {
+  if (!STATE.merged.length) return;
+  const commune = document.getElementById('fCommune').value.toUpperCase().trim();
+  const section = document.getElementById('fSection').value.toUpperCase().trim();
+  const type = document.getElementById('fType').value;
+  const year = document.getElementById('fYear').value;
+  const smin = parseFloat(document.getElementById('fSmin').value)||null;
+  const smax = parseFloat(document.getElementById('fSmax').value)||null;
+  STATE.plafondMethod = document.getElementById('fPlafond').value;
+
+  STATE.filtered = STATE.merged.filter(r => {
+    if (commune && !r.commune.includes(commune)) return false;
+    if (section && !r.section.includes(section)) return false;
+    if (type && r.type !== type) return false;
+    if (year && String(r.year) !== year) return false;
+    if (smin && r.effSurf < smin) return false;
+    if (smax && r.effSurf > smax) return false;
+    return true;
+  });
+
+  setStatus(`Analyse : ${STATE.filtered.length.toLocaleString('fr')} transactions`);
+  renderAll();
+  document.getElementById('results').classList.add('vis');
+}
+
+// ═══════════════════════════════════════════════════════════
+// STATS HELPERS
+// ═══════════════════════════════════════════════════════════
+function med(a) {
+  if (!a.length) return null;
+  const s=[...a].sort((x,y)=>x-y);
+  const m=Math.floor(s.length/2);
+  return s.length%2?s[m]:(s[m-1]+s[m])/2;
+}
+function avg(a){ return a.length?a.reduce((s,v)=>s+v,0)/a.length:null; }
+function pct(a,p){
+  if (!a.length) return null;
+  const s=[...a].sort((x,y)=>x-y);
+  return s[Math.min(Math.floor(p/100*s.length),s.length-1)];
+}
+function std(a){
+  const m=avg(a); if (m===null) return null;
+  return Math.sqrt(a.reduce((s,v)=>s+(v-m)**2,0)/a.length);
+}
+
+// PLAFOND: remove outliers first, then compute ceiling
+function computePlafond(arr, method) {
+  if (!arr.length) return null;
+  const s=[...arr].sort((a,b)=>a-b);
+  
+  // First: remove extreme outliers (below 1% or above 99% for noise)
+  const p1=pct(s,1), p99=pct(s,99);
+  const clean = s.filter(v=>v>=p1&&v<=p99);
+  if (!clean.length) return null;
+
+  switch(method) {
+    case 'iqr': {
+      const q1=pct(clean,25), q3=pct(clean,75);
+      const iqr=q3-q1;
+      return q3 + 1.5*iqr;
+    }
+    case 'p95': return pct(clean,95);
+    case 'p90': return pct(clean,90);
+    case '2std': {
+      const m=avg(clean), s2=std(clean);
+      return m + 2*s2;
+    }
+    default: return pct(clean,95);
+  }
+}
+
+// Market score 0-100
+function marketScore(rows, pm2vals) {
+  if (!rows.length || !pm2vals.length) return 0;
+  const liquidity = Math.min(100, rows.length * 2);          // volume
+  const spread = pm2vals.length>1 ? Math.max(0, 100 - (pct(pm2vals,90)-pct(pm2vals,10))/pct(pm2vals,50)*100) : 50;
+  const activity = Math.min(100, new Set(rows.map(r=>r.yearMonth).filter(Boolean)).size * 8);
+  return Math.round((liquidity*0.4 + spread*0.3 + activity*0.3));
+}
+
+// ═══════════════════════════════════════════════════════════
+// RENDER ALL
+// ═══════════════════════════════════════════════════════════
+function renderAll() {
+  const rows = STATE.filtered;
+  const pm2all = rows.map(r=>r.prixM2).filter(Boolean);
+  const prix = rows.map(r=>r.valeur).filter(Boolean);
+  const surfs = rows.map(r=>r.effSurf).filter(Boolean);
+
+  // SCOPE LABEL
+  const communes = [...new Set(rows.map(r=>r.commune))];
+  const years = [...new Set(rows.map(r=>r.year).filter(Boolean))];
+  document.getElementById('scopeLabel').textContent =
+    `${communes.length} commune(s) · ${years.length?years[0]:''}-${years.length>1?years[years.length-1]:''}`;
+
+  // ── SUMMARY ──
+  const plafGlobal = computePlafond(pm2all, STATE.plafondMethod);
+  document.getElementById('sumGrid').innerHTML = [
+    {l:'Transactions', v: rows.length.toLocaleString('fr'), s:`sur ${communes.length} communes`, c:''},
+    {l:'€/m² médian', v: fmt(med(pm2all),'€'), s:`moy. ${fmt(avg(pm2all),'€')}`, c:'c-gold'},
+    {l:'Prix plafond global', v: fmt(plafGlobal,'€'), s:`méthode: ${STATE.plafondMethod.toUpperCase()}`, c:'c-red'},
+    {l:'€/m² P10', v: fmt(pct(pm2all,10),'€'), s:'bas de marché', c:'c-green'},
+    {l:'€/m² P90', v: fmt(pct(pm2all,90),'€'), s:'haut de marché', c:'c-blue'},
+    {l:'Prix médian', v: fmt(med(prix),'€'), s:`min: ${fmt(Math.min(...prix),'€')}`, c:''},
+    {l:'Surface méd.', v: fmt(med(surfs),'m²'), s:`moy. ${fmt(avg(surfs),'m²')}`, c:''},
+    {l:'Nb communes', v: communes.length, s:`${[...new Set(rows.map(r=>r.section).filter(Boolean))].length} sections`, c:'c-purple'},
+    {l:'Fichiers sources', v: STATE.files.filter(f=>f.loaded).length, s:`${STATE.merged.length.toLocaleString('fr')} brut`, c:''},
+  ].map(s=>`<div class="sum-card">
+    <div class="sum-label">${s.l}</div>
+    <div class="sum-val ${s.c}">${s.v}</div>
+    <div class="sum-sub">${s.s}</div>
+  </div>`).join('');
+
+  // ── TIMELINE ──
+  renderTimeline(rows);
+
+  // ── PLAFONDS PAR TYPE ──
+  renderPlafondByType(rows);
+
+  // ── ZONES ──
+  renderZoneTables(rows);
+
+  // ── ZONE × PLAFOND TABLE ──
+  renderZonePlafondTable();
+
+  // ── DISTRIBUTIONS ──
+  renderDistributions(rows);
+
+  // ── ANOMALIES ──
+  renderAnomalies(rows, pm2all);
+
+  // ── OPPORTUNITÉS ──
+  renderOpportunities(rows);
+}
+
+// ─── TIMELINE ───
+function renderTimeline(rows) {
+  const byMonth = {};
+  const srcMonths = {};
+  rows.forEach(r => {
+    if (!r.yearMonth) return;
+    byMonth[r.yearMonth] = (byMonth[r.yearMonth]||0)+1;
+    if (!srcMonths[r.yearMonth]) srcMonths[r.yearMonth] = {};
+    srcMonths[r.yearMonth][r.sourceIdx] = (srcMonths[r.yearMonth][r.sourceIdx]||0)+1;
+  });
+  const keys = Object.keys(byMonth).sort();
+  if (!keys.length) return;
+  const maxV = Math.max(...Object.values(byMonth));
+
+  document.getElementById('tlChart').innerHTML = keys.map(k => {
+    const h = Math.round(byMonth[k]/maxV*100);
+    return `<div class="tl-bar" style="height:${h}%" data-tip="${k}: ${byMonth[k]} ventes"></div>`;
+  }).join('');
+
+  const tll = document.getElementById('tlLabels');
+  tll.innerHTML = `<span>${keys[0]}</span><span>${keys[Math.floor(keys.length/2)]||''}</span><span>${keys[keys.length-1]}</span>`;
+
+  // Source legend
+  const srcNames = STATE.files.map(f=>f.name);
+  document.getElementById('tlLegend').innerHTML = srcNames.map((n,i)=>
+    `<div class="tl-src"><div class="tl-src-dot" style="background:${SRC_COLORS[i%SRC_COLORS.length]}"></div><span style="color:var(--muted)">${n}</span></div>`
+  ).join('');
+}
+
+// ─── PLAFOND PAR TYPE ───
+const TYPE_CLASS = {'Maison':'t-maison','Appartement':'t-appart','Terrain':'t-terrain',
+  'Local industriel. commercial ou assimilé':'t-local','Dépendance':'t-dep'};
+const TYPE_COLOR = {'Maison':'var(--blue)','Appartement':'var(--gold)','Terrain':'var(--green)',
+  'Local industriel. commercial ou assimilé':'var(--red)','Dépendance':'var(--purple)'};
+
+function renderPlafondByType(rows) {
+  const types = {};
+  rows.forEach(r => {
+    const t = r.type||'Inconnu';
+    if (!types[t]) types[t]=[];
+    types[t].push(r);
+  });
+
+  STATE.plafondByType = types;
+
+  document.getElementById('plafondByType').innerHTML = Object.entries(types)
+    .sort((a,b)=>b[1].length-a[1].length)
+    .map(([type, tr]) => {
+      const pm2 = tr.map(r=>r.prixM2).filter(Boolean);
+      const px = tr.map(r=>r.valeur).filter(Boolean);
+      const sf = tr.map(r=>r.effSurf).filter(Boolean);
+      const plafond = computePlafond(pm2, STATE.plafondMethod);
+      const pct10 = pct(pm2,10), pct25=pct(pm2,25), pct75=pct(pm2,75), pct90=pct(pm2,90);
+      const medPm2 = med(pm2);
+      const outliers = pm2.filter(v=>v>plafond).length;
+      const cls = TYPE_CLASS[type]||'t-autre';
+      const col = TYPE_COLOR[type]||'var(--muted)';
+      return `<div class="plafond-card ${cls}">
+        <div class="plafond-type" style="color:${col}">${type}</div>
+        <div class="plafond-main">
+          <div class="plafond-val" style="color:${col}">${fmt(plafond,'')}</div>
+          <div class="plafond-unit">€/m² plafond</div>
+        </div>
+        <div class="plafond-method">Méthode ${STATE.plafondMethod.toUpperCase()} · ${tr.length} transactions</div>
+        <div class="plafond-rows">
+          <div class="pr"><span class="pr-k">Médiane €/m²</span><span class="pr-v">${fmt(medPm2,'€')}</span></div>
+          <div class="pr"><span class="pr-k">P10 €/m²</span><span class="pr-v c-green">${fmt(pct10,'€')}</span></div>
+          <div class="pr"><span class="pr-k">Q1 (P25)</span><span class="pr-v">${fmt(pct25,'€')}</span></div>
+          <div class="pr"><span class="pr-k">Q3 (P75)</span><span class="pr-v">${fmt(pct75,'€')}</span></div>
+          <div class="pr"><span class="pr-k">P90 €/m²</span><span class="pr-v c-red">${fmt(pct90,'€')}</span></div>
+          <div class="pr"><span class="pr-k">Prix médian</span><span class="pr-v">${fmt(med(px),'€')}</span></div>
+          <div class="pr"><span class="pr-k">Surface méd.</span><span class="pr-v">${fmt(med(sf),'m²')}</span></div>
+          ${outliers > 0 ? `<div class="pr"><span class="pr-k">Au-dessus plafond</span><span class="pr-v c-red">${outliers} tx (${Math.round(outliers/pm2.length*100)}%)</span></div>` : ''}
+        </div>
+        ${outliers > pm2.length * 0.15 ? `<div class="plafond-alert">⚠ ${Math.round(outliers/pm2.length*100)}% des ventes dépassent le plafond — marché hétérogène ou données à vérifier</div>` : ''}
+      </div>`;
+    }).join('');
+}
+
+// ─── ZONE TABLES ───
+function renderZoneTables(rows) {
+  const communes = [...new Set(rows.map(r=>r.commune))];
+  STATE.communeData = communes.map(c => buildZoneStats(rows.filter(r=>r.commune===c), c, null));
+  sortAndRenderCommuneTable();
+
+  // Sections
+  const sections = [...new Set(rows.filter(r=>r.section).map(r=>`${r.commune}||${r.section}`))];
+  STATE.sectionData = sections.map(k => {
+    const [comm, sec] = k.split('||');
+    return buildZoneStats(rows.filter(r=>r.commune===comm&&r.section===sec), comm, sec);
+  });
+  renderSectionTable();
+}
+
+function buildZoneStats(rows, commune, section) {
+  const pm2 = rows.map(r=>r.prixM2).filter(Boolean);
+  const px = rows.map(r=>r.valeur).filter(Boolean);
+  const sf = rows.map(r=>r.effSurf).filter(Boolean);
+  const types = {};
+  rows.forEach(r => { const t=r.type||'?'; types[t]=(types[t]||0)+1; });
+  const topType = Object.entries(types).sort((a,b)=>b[1]-a[1])[0]?.[0]||'';
+  const sources = [...new Set(rows.map(r=>r.sourceIdx))];
+  const plafond = computePlafond(pm2, STATE.plafondMethod);
+  const plafByType = {};
+  Object.entries(types).forEach(([t]) => {
+    const tp = rows.filter(r=>r.type===t).map(r=>r.prixM2).filter(Boolean);
+    plafByType[t] = computePlafond(tp, STATE.plafondMethod);
+  });
+
+  return {
+    commune, section,
+    nb: rows.length,
+    pm2: med(pm2), pm2avg: avg(pm2),
+    pm2p10: pct(pm2,10), pm2p25: pct(pm2,25),
+    pm2p75: pct(pm2,75), pm2p90: pct(pm2,90),
+    plafond,
+    plafByType,
+    prixMed: med(px),
+    surfMed: med(sf),
+    topType, types,
+    sources,
+    score: marketScore(rows, pm2),
+  };
+}
+
+function sortZones(col) {
+  if (STATE.sortZoneCol === col) STATE.sortZoneDir *= -1;
+  else { STATE.sortZoneCol = col; STATE.sortZoneDir = -1; }
+  sortAndRenderCommuneTable();
+}
+
+function sortAndRenderCommuneTable() {
+  const data = [...STATE.communeData].sort((a,b) => {
+    const av = a[STATE.sortZoneCol], bv = b[STATE.sortZoneCol];
+    if (typeof av === 'string') return STATE.sortZoneDir * av.localeCompare(bv);
+    return STATE.sortZoneDir * ((av||0)-(bv||0));
+  });
+
+  const maxNb = Math.max(...data.map(d=>d.nb));
+  document.getElementById('bodyCommune').innerHTML = data.map(d => {
+    const src = d.sources.map(i => `<span style="color:${SRC_COLORS[i%SRC_COLORS.length]};font-size:9px">●</span>`).join('');
+    const typesTags = Object.entries(d.types||{}).sort((a,b)=>b[1]-a[1]).slice(0,3)
+      .map(([t,c]) => `<span class="tag ${tagClass(t)}">${shortType(t)}(${c})</span>`).join('');
+    const scoreColor = d.score>70?'var(--green)':d.score>40?'var(--gold)':'var(--red)';
+    return `<tr>
+      <td class="td-bold">${d.commune} <span class="td-muted" style="font-size:10px">${d.sources.length>1?'multi':''}</span></td>
+      <td>${src}</td>
+      <td class="td-r">${d.nb}</td>
+      <td class="td-r c-gold">${fmt(d.pm2,'€')}</td>
+      <td class="td-r c-green">${fmt(d.pm2p10,'€')}</td>
+      <td class="td-r c-blue">${fmt(d.pm2p90,'€')}</td>
+      <td class="td-r c-red">${fmt(d.plafond,'€')}</td>
+      <td class="td-r">${fmt(d.prixMed,'€')}</td>
+      <td class="td-r">${fmt(d.surfMed,'m²')}</td>
+      <td>${typesTags}</td>
+      <td>
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${d.score}%;background:${scoreColor}"></div></div>
+          <div class="score-txt" style="color:${scoreColor}">${d.score}</div>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSectionTable() {
+  document.getElementById('bodySection').innerHTML = STATE.sectionData
+    .sort((a,b)=>b.nb-a.nb)
+    .map(d => {
+      const typesTags = Object.entries(d.types||{}).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .map(([t,c]) => `<span class="tag ${tagClass(t)}">${shortType(t)}(${c})</span>`).join('');
+      return `<tr>
+        <td class="td-bold">${d.commune}</td>
+        <td style="color:var(--gold)">${d.section||'—'}</td>
+        <td class="td-r">${d.nb}</td>
+        <td class="td-r c-gold">${fmt(d.pm2,'€')}</td>
+        <td class="td-r c-green">${fmt(d.pm2p10,'€')}</td>
+        <td class="td-r c-blue">${fmt(d.pm2p90,'€')}</td>
+        <td class="td-r c-red">${fmt(d.plafond,'€')}</td>
+        <td class="td-r">${fmt(d.prixMed,'€')}</td>
+        <td>${typesTags}</td>
+      </tr>`;
+    }).join('');
+}
+
+function renderZonePlafondTable() {
+  const data = STATE.communeData;
+  document.getElementById('bodyZonePlafond').innerHTML = data
+    .sort((a,b)=>b.nb-a.nb)
+    .map(d => {
+      const sections = STATE.sectionData.filter(s=>s.commune===d.commune).length;
+      const scoreColor = d.score>70?'var(--green)':d.score>40?'var(--gold)':'var(--red)';
+      return `<tr>
+        <td class="td-bold">${d.commune}</td>
+        <td class="td-muted">${sections > 0 ? sections+' section(s)' : '—'}</td>
+        <td class="td-r">${d.nb}</td>
+        <td><span class="tag ${tagClass(d.topType)}">${shortType(d.topType)}</span></td>
+        <td class="td-r c-blue">${fmt(d.plafByType?.['Maison'],'€')}</td>
+        <td class="td-r c-gold">${fmt(d.plafByType?.['Appartement'],'€')}</td>
+        <td class="td-r c-green">${fmt(d.plafByType?.['Terrain'],'€')}</td>
+        <td class="td-r">${fmt(d.pm2,'€')}</td>
+        <td>
+          <div class="score-bar">
+            <div class="score-track"><div class="score-fill" style="width:${d.score}%;background:${scoreColor}"></div></div>
+            <div class="score-txt" style="color:${scoreColor}">${d.score}</div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+}
+
+// ─── DISTRIBUTIONS ───
+function renderDistributions(rows) {
+  const types = {};
+  rows.forEach(r => {
+    const t = r.type||'Inconnu';
+    if (!types[t]) types[t]=[];
+    types[t].push(r.prixM2);
+  });
+
+  document.getElementById('distGrid').innerHTML = Object.entries(types)
+    .filter(([,vals]) => vals.filter(Boolean).length >= 3)
+    .sort((a,b)=>b[1].length-a[1].length)
+    .map(([type, vals]) => {
+      const v = vals.filter(Boolean);
+      const mn=Math.min(...v), mx=Math.max(...v);
+      const step=(mx-mn)/12;
+      const bins = Array(12).fill(0);
+      v.forEach(x => { const i=Math.min(Math.floor((x-mn)/step),11); bins[i]++; });
+      const maxB=Math.max(...bins);
+      const plafond = computePlafond(v, STATE.plafondMethod);
+      const col = TYPE_COLOR[type]||'var(--muted)';
+      const barsHtml = bins.map((b,i) => {
+        const h=maxB>0?Math.round(b/maxB*100):0;
+        const from=Math.round(mn+i*step);
+        const isPlaf = (mn+i*step<=plafond) && (mn+(i+1)*step>plafond);
+        return `<div class="hist-bar ${isPlaf?'plafond-marker':''}" style="height:${h}%" title="${from}€: ${b} tx"></div>`;
+      }).join('');
+      return `<div class="dist-card">
+        <div class="dist-title" style="color:${col}">${type}</div>
+        <div class="hist">${barsHtml}</div>
+        <div class="hist-labels"><span>${fmt(mn,'€')}</span><span style="color:var(--red)">▲ ${fmt(plafond,'€')}</span><span>${fmt(mx,'€')}</span></div>
+        <div class="dist-stats">
+          <div class="ds"><span class="ds-k">P10</span><span class="ds-v">${fmt(pct(v,10),'€')}</span></div>
+          <div class="ds"><span class="ds-k">Méd</span><span class="ds-v">${fmt(med(v),'€')}</span></div>
+          <div class="ds"><span class="ds-k">P90</span><span class="ds-v">${fmt(pct(v,90),'€')}</span></div>
+          <div class="ds"><span class="ds-k">Plafond</span><span class="ds-v" style="color:var(--red)">${fmt(plafond,'€')}</span></div>
+          <div class="ds"><span class="ds-k">n=</span><span class="ds-v">${v.length}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ─── ANOMALIES ───
+function renderAnomalies(rows, pm2all) {
+  const alerts = [];
+  const plaf = computePlafond(pm2all, STATE.plafondMethod);
+  const m = med(pm2all);
+
+  // Extreme outliers
+  const ext = rows.filter(r=>r.prixM2 && r.prixM2 > plaf*2);
+  if (ext.length) alerts.push({type:'err', msg:`<b>${ext.length} transaction(s)</b> à plus du double du plafond (>${fmt(plaf*2,'€/m²')}) — probables erreurs ou biens atypiques non représentatifs.`});
+
+  // Zero/near-zero prix
+  const zero = rows.filter(r=>r.valeur && r.valeur < 1000);
+  if (zero.length) alerts.push({type:'err', msg:`<b>${zero.length} vente(s)</b> avec prix inférieur à 1 000€ — donations, ventes familiales ou erreurs.`});
+
+  // No surface
+  const noS = rows.filter(r=>!r.effSurf);
+  if (noS.length > rows.length*0.05) alerts.push({type:'warn', msg:`<b>${noS.length} transactions</b> sans surface (${Math.round(noS.length/rows.length*100)}%) — prix/m² indisponible pour ces lignes.`});
+
+  // No section
+  const noSec = rows.filter(r=>!r.section);
+  if (noSec.length > rows.length*0.5) alerts.push({type:'warn', msg:`<b>${noSec.length} transactions</b> sans section cadastrale — le découpage par zone sera partiel.`});
+
+  // Heterogeneous commune
+  STATE.communeData.forEach(d => {
+    if (d.nb >= 10 && d.plafond/d.pm2 > 4) {
+      alerts.push({type:'warn', msg:`<b>${d.commune}</b> : écart très large entre médiane (${fmt(d.pm2,'€/m²')}) et plafond (${fmt(d.plafond,'€/m²')}) — marché hétérogène, sections à analyser séparément.`});
+    }
+  });
+
+  // Multi-source overlaps
+  if (STATE.files.length > 1) {
+    const dupCommunes = STATE.communeData.filter(d=>d.sources.length>1);
+    if (dupCommunes.length) alerts.push({type:'warn', msg:`<b>${dupCommunes.length} commune(s)</b> présente(s) dans plusieurs fichiers sources — vérifier les chevauchements temporels pour éviter le double-comptage.`});
+  }
+
+  if (!alerts.length) alerts.push({type:'ok', msg:'✓ Aucune anomalie détectée sur ce jeu de données.'});
+
+  document.getElementById('anomaliesList').innerHTML = alerts.map(a =>
+    `<div class="anomaly ${a.type==='warn'?'warn':a.type==='ok'?'':''}"><span>${a.msg}</span></div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════════
+// OPPORTUNITY DETECTION ENGINE
+// ═══════════════════════════════════════════════════════════
+
+// Build commune price reference map for context
+function buildPriceRef(rows) {
+  const ref = {};
+  const communes = [...new Set(rows.map(r=>r.commune))];
+  communes.forEach(c => {
+    const cr = rows.filter(r=>r.commune===c);
+    ref[c] = {};
+    ['Maison','Appartement','Terrain'].forEach(t => {
+      const pm2 = cr.filter(r=>r.type===t).map(r=>r.prixM2).filter(Boolean);
+      if (pm2.length >= 3) ref[c][t] = { med: med(pm2), p20: pct(pm2,20), p10: pct(pm2,10) };
+    });
+    const allPm2 = cr.map(r=>r.prixM2).filter(Boolean);
+    ref[c]['_all'] = { med: med(allPm2), p20: pct(allPm2,20) };
+  });
+  return ref;
+}
+
+function classifyRow(r, priceRef) {
+  const signals = [];
+  let classification = 'normal';
+  let confidence = 0; // 0-3 pips
+
+  const commune = r.commune;
+  const ref = priceRef[commune] || {};
+  const terrainRef = ref['Terrain'] || ref['_all'];
+  const maisonRef = ref['Maison'] || ref['_all'];
+  const localRef = ref[r.type] || ref['_all'];
+
+  // ── Ratio bâti/terrain
+  const ratioBatiTerrain = (r.surface && r.surfTerr && r.surfTerr > 0)
+    ? r.surface / r.surfTerr : null;
+
+  // ── Prix relatif au marché local
+  const pctVsMedian = (r.prixM2 && localRef?.med)
+    ? r.prixM2 / localRef.med : null;
+
+  // ── Prix maison vs prix terrain local
+  const pctVsTerrain = (r.prixM2 && terrainRef?.med)
+    ? r.prixM2 / terrainRef.med : null;
+
+  // ────────────────────────────────────────
+  // SIGNAL 1: FONCIER DÉGUISÉ
+  // Maison dont le prix/m² ≈ prix terrain (< 130% terrain médian)
+  // ────────────────────────────────────────
+  if (r.type === 'Maison' && pctVsTerrain !== null && pctVsTerrain < 1.3) {
+    classification = 'foncier';
+    confidence += 2;
+    signals.push(`€/m² maison (${fmt(r.prixM2,'€')}) ≈ terrain local (${fmt(terrainRef.med,'€')})`);
+  }
+
+  // SIGNAL 2: Terrain avec surface bâtie non nulle → mal classifié
+  if (r.type === 'Terrain' && r.surface && r.surface > 10) {
+    classification = classification === 'normal' ? 'foncier' : classification;
+    confidence += 1;
+    signals.push(`Terrain avec bâti déclaré (${Math.round(r.surface)} m²) — bien mal classifié`);
+  }
+
+  // ────────────────────────────────────────
+  // SIGNAL 3: DÉMOLITION / RECONSTRUCTION
+  // Maison avec ratio bâti/terrain très faible (<10%) + prix bas
+  // ────────────────────────────────────────
+  if (r.type === 'Maison' && ratioBatiTerrain !== null && ratioBatiTerrain < 0.10
+      && pctVsMedian !== null && pctVsMedian < 0.65) {
+    classification = 'demol';
+    confidence = Math.max(confidence, 2);
+    signals.push(`Bâti dérisoire (${Math.round(ratioBatiTerrain*100)}% du terrain) + prix -${Math.round((1-pctVsMedian)*100)}% marché`);
+  }
+
+  // ────────────────────────────────────────
+  // SIGNAL 4: RÉNOVATION PROBABLE
+  // Maison/Appart < P20 du marché local, surface réelle, pas déjà classé
+  // ────────────────────────────────────────
+  if (['Maison','Appartement'].includes(r.type) && pctVsMedian !== null && pctVsMedian < 0.65
+      && r.surface && r.surface > 30 && classification === 'normal') {
+    classification = 'renovation';
+    confidence += 2;
+    signals.push(`Prix -${Math.round((1-pctVsMedian)*100)}% vs médiane locale — bâti de ${Math.round(r.surface)} m²`);
+  }
+
+  // Renforcement rénovation: nb pièces cohérent mais prix très bas
+  if (['Maison','Appartement'].includes(r.type) && r.nbPieces >= 3
+      && pctVsMedian !== null && pctVsMedian < 0.55 && classification === 'normal') {
+    classification = 'renovation';
+    confidence = Math.max(confidence, 2);
+    signals.push(`${r.nbPieces}P à ${fmt(r.prixM2,'€/m²')} — ${Math.round((1-pctVsMedian)*100)}% sous le marché`);
+  }
+
+  // ────────────────────────────────────────
+  // SIGNAL 5: ATYPIQUE POSITIF
+  // Prix < P10 local, type non terrain, surface OK, pas déjà classé
+  // ────────────────────────────────────────
+  if (classification === 'normal' && pctVsMedian !== null && pctVsMedian < 0.5
+      && r.type !== 'Terrain' && r.surface && r.surface > 20) {
+    classification = 'atypique';
+    confidence += 1;
+    signals.push(`Prix exceptionnellement bas (-${Math.round((1-pctVsMedian)*100)}% vs médiane)`);
+  }
+
+  // ────────────────────────────────────────
+  // SIGNAL 6: GRAND TERRAIN — potentiel division
+  // ────────────────────────────────────────
+  if (r.type === 'Terrain' && r.surfTerr > 1000 && pctVsMedian !== null && pctVsMedian < 0.8) {
+    signals.push(`Grand terrain ${Math.round(r.surfTerr)} m² — potentiel découpage`);
+    if (classification === 'normal') { classification = 'atypique'; confidence += 1; }
+  }
+
+  // Confidence cap
+  confidence = Math.min(confidence, 3);
+
+  return { classification, confidence, signals, pctVsMedian, pctVsTerrain };
+}
+
+function classifyAll(rows) {
+  const priceRef = buildPriceRef(rows);
+  return rows.map(r => {
+    const { classification, confidence, signals, pctVsMedian } = classifyRow(r, priceRef);
+    return { ...r, classification, confidence, signals, pctVsMedian };
+  });
+}
+
+// ─── RENDER OPPORTUNITIES ───
+let _oppRows = [];
+let _oppFilter = '';
+
+function renderOpportunities(rows) {
+  const classified = classifyAll(rows);
+  _oppRows = classified.filter(r => r.classification !== 'normal');
+
+  const counts = { foncier:0, renovation:0, demol:0, atypique:0 };
+  _oppRows.forEach(r => { if(counts[r.classification]!==undefined) counts[r.classification]++; });
+
+  // Summary grid
+  document.getElementById('oppSummaryGrid').innerHTML = [
+    { cls:'c-foncier', k:'foncier', label:'Foncier déguisé', sub:'Maison ≈ prix terrain' },
+    { cls:'c-renovation', k:'renovation', label:'Rénovation probable', sub:'Prix bas + bâti existant' },
+    { cls:'c-demol', k:'demol', label:'Démolition/recons.', sub:'Ratio bâti/terrain faible' },
+    { cls:'c-atypique', k:'atypique', label:'Atypique positif', sub:'Sous P10, cause inconnue' },
+  ].map(s => `<div class="opp-sum-card ${s.cls}">
+    <div class="opp-sum-label">${s.label}</div>
+    <div class="opp-sum-val">${counts[s.k]}</div>
+    <div class="opp-sum-sub">${s.sub}</div>
+  </div>`).join('');
+
+  // Insights par commune
+  const byCommune = {};
+  _oppRows.forEach(r => {
+    if (!byCommune[r.commune]) byCommune[r.commune] = [];
+    byCommune[r.commune].push(r);
+  });
+
+  const insights = [];
+  Object.entries(byCommune).forEach(([commune, crows]) => {
+    const foncierPct = crows.filter(r=>r.classification==='foncier').length / crows.length;
+    const renoPct = crows.filter(r=>r.classification==='renovation').length / crows.length;
+    const allMaisons = rows.filter(r=>r.commune===commune&&r.type==='Maison');
+    const allTerrains = rows.filter(r=>r.commune===commune&&r.type==='Terrain');
+
+    if (allMaisons.length >= 5 && allTerrains.length >= 3) {
+      const maisonMed = med(allMaisons.map(r=>r.prixM2).filter(Boolean));
+      const terrainMed = med(allTerrains.map(r=>r.prixM2).filter(Boolean));
+      if (maisonMed && terrainMed && maisonMed < terrainMed * 1.5) {
+        insights.push({
+          commune,
+          title: `${commune} — Convergence Maison/Terrain`,
+          body: `Prix médian maisons (${fmt(maisonMed,'€/m²')}) très proche du foncier nu (${fmt(terrainMed,'€/m²')}) — écart de seulement ${Math.round((maisonMed/terrainMed-1)*100)}%. 
+          Cela signifie que le marché valorise peu le bâti existant. <b>${crows.filter(r=>r.classification==='foncier').length} maisons</b> qualifiées "foncier déguisé". 
+          Opportunité MDB : acquisition pour valeur foncière, reconstruction ou réhabilitation lourde.`,
+        });
+      }
+    }
+
+    if (renoPct > 0.3 && crows.length >= 5) {
+      insights.push({
+        commune,
+        title: `${commune} — Marché de la rénovation actif`,
+        body: `${Math.round(renoPct*100)}% des opportunités détectées (${crows.filter(r=>r.classification==='renovation').length} biens) sont classifiés "rénovation probable". 
+        Signal fort d'un parc bâti vieillissant dans ce secteur. Potentiel de valorisation après travaux significatif.`,
+      });
+    }
+  });
+
+  // Global insight si beaucoup de foncier déguisé
+  const totalFoncier = counts.foncier;
+  const totalMaisons = rows.filter(r=>r.type==='Maison').length;
+  if (totalMaisons > 0 && totalFoncier / totalMaisons > 0.15) {
+    insights.unshift({
+      commune: 'GLOBAL',
+      title: `Analyse globale — ${Math.round(totalFoncier/totalMaisons*100)}% des maisons vendues au prix du terrain`,
+      body: `Sur ${totalMaisons} maisons analysées, <b>${totalFoncier}</b> (${Math.round(totalFoncier/totalMaisons*100)}%) ont été vendues à un prix/m² inférieur à 130% du foncier nu local. 
+      Ce signal fort indique soit un parc très dégradé, soit un marché où les acheteurs paient essentiellement le terrain. 
+      Pour un marchand de biens : priorité aux acquisitions dans ce segment, avec calcul de rentabilité basé sur valeur foncière nette.`,
+    });
+  }
+
+  document.getElementById('oppInsights').innerHTML = insights.map(ins => `
+    <div class="opp-insight">
+      <div class="opp-insight-title">${ins.title}</div>
+      <div>${ins.body}</div>
+    </div>`).join('');
+
+  // Update tab badge
+  const total = _oppRows.length;
+  document.getElementById('tabOpps').textContent = `⬡ Opportunités${total > 0 ? ' ('+total+')' : ''}`;
+
+  renderOppTable('');
+}
+
+function renderOppTable(filter) {
+  _oppFilter = filter;
+  const display = filter ? _oppRows.filter(r=>r.classification===filter) : _oppRows;
+
+  document.getElementById('bodyOpps').innerHTML = display
+    .sort((a,b) => a.pctVsMedian - b.pctVsMedian) // most discounted first
+    .slice(0, 500) // cap for perf
+    .map(r => {
+      const pips = [1,2,3].map(i=>`<div class="pip ${i<=r.confidence?'on':''}"></div>`).join('');
+      const discPct = r.pctVsMedian ? Math.round((1-r.pctVsMedian)*100) : null;
+      const discColor = discPct > 50 ? 'var(--green)' : discPct > 30 ? 'var(--gold)' : 'var(--muted)';
+      return `<tr>
+        <td class="td-bold">${r.commune}</td>
+        <td class="td-muted">${r.section||'—'}</td>
+        <td><span class="tag ${tagClass(r.type)}">${shortType(r.type)}</span></td>
+        <td class="td-r">${fmt(r.valeur,'€')}</td>
+        <td class="td-r">${fmt(r.surface,'m²')}</td>
+        <td class="td-r">${fmt(r.surfTerr,'m²')}</td>
+        <td class="td-r c-gold">${fmt(r.prixM2,'€')}</td>
+        <td class="td-r td-muted">${r.pctVsMedian ? fmt(r.prixM2/r.pctVsMedian,'€') : '—'}</td>
+        <td class="td-r" style="color:${discColor}">${discPct!==null ? '-'+discPct+'%' : '—'}</td>
+        <td><span class="opp-badge ${r.classification}">${{foncier:'Foncier déguisé',renovation:'Rénovation',demol:'Démolition',atypique:'Atypique'}[r.classification]||r.classification}</span></td>
+        <td><div class="confidence-pip">${pips}</div></td>
+        <td style="color:var(--muted);font-size:10px;max-width:220px;white-space:normal">${r.signals.join(' · ')}</td>
+      </tr>`;
+    }).join('');
+}
+
+function filterOppTable(filter) { renderOppTable(filter); }
+
+function doExportOpps() {
+  const display = _oppFilter ? _oppRows.filter(r=>r.classification===_oppFilter) : _oppRows;
+  const hdr = ['Commune','Section','Type DVF','Prix vente €','Surface bâti m²','Surface terrain m²','€/m²','Classification','Confiance','Signaux','Date'];
+  const rows = display.map(r => [
+    r.commune, r.section||'', r.type, Math.round(r.valeur)||'',
+    Math.round(r.surface)||'', Math.round(r.surfTerr)||'', Math.round(r.prixM2)||'',
+    r.classification, r.confidence, r.signals.join(' | '), r.dateRaw
+  ]);
+  csvDl([hdr,...rows], `dvf-opportunites-${today()}.csv`);
+}
+
+
+function buildExportJSON() {
+  const rows = STATE.filtered;
+  const pm2all = rows.map(r=>r.prixM2).filter(Boolean);
+  const px = rows.map(r=>r.valeur).filter(Boolean);
+  const sf = rows.map(r=>r.effSurf).filter(Boolean);
+
+  return {
+    _meta: {
+      generated_at: new Date().toISOString(),
+      source: 'DVF — data.gouv.fr',
+      fichiers: STATE.files.map(f=>f.name),
+      transactions_brutes: STATE.merged.length,
+      transactions_filtrees: rows.length,
+      methode_plafond: STATE.plafondMethod,
+    },
+    analyse_secteur: {
+      nb_ventes_total: rows.length,
+      prix_m2_median: Math.round(med(pm2all)),
+      prix_m2_moyen: Math.round(avg(pm2all)),
+      prix_m2_p10: Math.round(pct(pm2all,10)),
+      prix_m2_p25: Math.round(pct(pm2all,25)),
+      prix_m2_p75: Math.round(pct(pm2all,75)),
+      prix_m2_p90: Math.round(pct(pm2all,90)),
+      prix_plafond_global: Math.round(computePlafond(pm2all, STATE.plafondMethod)),
+      prix_median: Math.round(med(px)),
+      surface_mediane: Math.round(med(sf)),
+      nb_communes: [...new Set(rows.map(r=>r.commune))].length,
+    },
+    prix_plafond_par_type: Object.entries(STATE.plafondByType||{}).map(([type, tr]) => {
+      const pm2 = tr.map(r=>r.prixM2).filter(Boolean);
+      return {
+        type_bien: type,
+        nb_transactions: tr.length,
+        prix_m2_p10: Math.round(pct(pm2,10)),
+        prix_m2_median: Math.round(med(pm2)),
+        prix_m2_p90: Math.round(pct(pm2,90)),
+        prix_plafond: Math.round(computePlafond(pm2, STATE.plafondMethod)),
+        prix_plafond_methode: STATE.plafondMethod,
+        surface_mediane: Math.round(med(tr.map(r=>r.effSurf).filter(Boolean))),
+        prix_median: Math.round(med(tr.map(r=>r.valeur).filter(Boolean))),
+      };
+    }),
+    communes: STATE.communeData.map(d => ({
+      commune: d.commune,
+      nb_ventes: d.nb,
+      prix_m2_median: Math.round(d.pm2),
+      prix_m2_p10: Math.round(d.pm2p10),
+      prix_m2_p90: Math.round(d.pm2p90),
+      prix_plafond: Math.round(d.plafond),
+      prix_plafond_par_type: Object.fromEntries(
+        Object.entries(d.plafByType||{}).map(([t,v])=>[t.toLowerCase().replace(/\s/g,'_'),Math.round(v)])
+      ),
+      prix_median: Math.round(d.prixMed),
+      surface_mediane: Math.round(d.surfMed),
+      score_marche: d.score,
+      sources: d.sources.map(i=>STATE.files[i]?.name),
+    })),
+    sections_cadastrales: STATE.sectionData.map(d => ({
+      commune: d.commune,
+      section: d.section,
+      nb_ventes: d.nb,
+      prix_m2_median: Math.round(d.pm2),
+      prix_m2_p10: Math.round(d.pm2p10),
+      prix_m2_p90: Math.round(d.pm2p90),
+      prix_plafond: Math.round(d.plafond),
+      prix_plafond_par_type: Object.fromEntries(
+        Object.entries(d.plafByType||{}).map(([t,v])=>[t.toLowerCase().replace(/\s/g,'_'),Math.round(v)])
+      ),
+      prix_median: Math.round(d.prixMed),
+    })),
+  };
+}
+
+function doExportJSON() {
+  const data = buildExportJSON();
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  dl(blob, `dvf-suprealty-${today()}.json`);
+}
+function doPreviewJSON() {
+  const pre = document.getElementById('jsonPre');
+  if (pre.classList.contains('vis')) { pre.classList.remove('vis'); return; }
+  pre.textContent = JSON.stringify(buildExportJSON(), null, 2);
+  pre.classList.add('vis');
+}
+function doExportCSV() {
+  const hdr = ['Commune','Transactions','€/m² médian','€/m² P10','€/m² P90','Plafond €/m²','Prix médian','Surf méd m²','Score marché'];
+  const rows = STATE.communeData.map(d => [
+    d.commune, d.nb,
+    Math.round(d.pm2)||'', Math.round(d.pm2p10)||'', Math.round(d.pm2p90)||'',
+    Math.round(d.plafond)||'', Math.round(d.prixMed)||'', Math.round(d.surfMed)||'', d.score
+  ]);
+  csvDl([hdr,...rows], `dvf-communes-${today()}.csv`);
+}
+function doExportPlafonds() {
+  const hdr = ['Type','Plafond €/m²','Médiane €/m²','P10','P90','Nb tx','Méthode'];
+  const rows = Object.entries(STATE.plafondByType||{}).map(([t,tr]) => {
+    const pm2 = tr.map(r=>r.prixM2).filter(Boolean);
+    return [t, Math.round(computePlafond(pm2,STATE.plafondMethod)), Math.round(med(pm2)), Math.round(pct(pm2,10)), Math.round(pct(pm2,90)), tr.length, STATE.plafondMethod];
+  });
+  csvDl([hdr,...rows], `dvf-plafonds-${today()}.csv`);
+}
+
+function csvDl(rows, name) {
+  const blob = new Blob(['\uFEFF'+rows.map(r=>r.join(';')).join('\n')], {type:'text/csv;charset=utf-8'});
+  dl(blob, name);
+}
+function dl(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+}
+function today() { return new Date().toISOString().slice(0,10); }
+
+// ═══════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════
+function fmt(v, suf='') {
+  if (v===null||v===undefined||isNaN(v)) return '—';
+  return Math.round(v).toLocaleString('fr') + (suf?' '+suf:'');
+}
+function shortType(t) {
+  return {
+    'Maison':'MAI','Appartement':'APP','Terrain':'TER',
+    'Local industriel. commercial ou assimilé':'LOC','Dépendance':'DÉP'
+  }[t]||t.slice(0,3).toUpperCase();
+}
+function tagClass(t) {
+  return {'Maison':'tag-M','Appartement':'tag-A','Terrain':'tag-T',
+    'Local industriel. commercial ou assimilé':'tag-L','Dépendance':'tag-D'}[t]||'tag-X';
+}
+function setStatus(msg) {
+  document.getElementById('statusTxt').textContent = msg;
+  document.getElementById('statusBar').classList.add('vis');
+}
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('t-'+id).classList.add('active');
+}
+</script>
+</body>
+</html>
