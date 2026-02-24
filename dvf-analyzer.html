@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DVF Analyzer — SuPrealty</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c23;
+    --border: #232830;
+    --accent: #e8c547;
+    --accent2: #5b8dee;
+    --text: #e8eaf0;
+    --muted: #6b7280;
+    --danger: #f87171;
+    --success: #4ade80;
+    --mono: 'DM Mono', monospace;
+    --sans: 'Syne', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(232,197,71,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,197,71,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 1400px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 0 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+  .logo {
+    font-family: var(--sans);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+  .badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 10px;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* DROP ZONE */
+  #dropzone {
+    border: 1.5px dashed var(--border);
+    background: var(--surface);
+    padding: 60px 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  #dropzone::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(232,197,71,0.04) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  #dropzone:hover, #dropzone.drag-over {
+    border-color: var(--accent);
+    background: rgba(232,197,71,0.04);
+  }
+  #dropzone.drag-over { transform: scale(1.005); }
+
+  .drop-icon {
+    font-size: 40px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+  }
+  .drop-title {
+    font-family: var(--sans);
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .drop-sub { color: var(--muted); font-size: 12px; line-height: 1.6; }
+  .drop-sub strong { color: var(--accent); }
+
+  #fileInput { display: none; }
+
+  /* FILTERS */
+  #filters {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-top: 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+  #filters.visible { display: flex; }
+
+  .filter-group { display: flex; flex-direction: column; gap: 6px; min-width: 160px; }
+  .filter-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  select, input[type="text"] {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    outline: none;
+    appearance: none;
+    width: 100%;
+  }
+  select:focus, input[type="text"]:focus { border-color: var(--accent); }
+
+  .btn {
+    background: var(--accent);
+    color: #0a0c10;
+    border: none;
+    padding: 9px 20px;
+    font-family: var(--sans);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #f0d060; transform: translateY(-1px); }
+  .btn-ghost {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 9px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.5px;
+  }
+  .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* STATUS BAR */
+  #statusBar {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    padding: 12px 16px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 16px;
+    align-items: center;
+    gap: 12px;
+  }
+  #statusBar.visible { display: flex; }
+  .status-dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* RESULTS */
+  #results { margin-top: 40px; display: none; }
+  #results.visible { display: block; }
+
+  /* SECTION HEADER */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .section-count {
+    color: var(--accent);
+    font-size: 11px;
+  }
+
+  /* SUMMARY GRID */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 32px;
+  }
+  .stat-card {
+    background: var(--surface);
+    padding: 20px 20px 18px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .stat-card:hover::before { opacity: 1; }
+  .stat-label { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+  .stat-value {
+    font-family: var(--sans);
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--text);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-sub { font-size: 11px; color: var(--muted); }
+  .stat-accent { color: var(--accent); }
+
+  /* COMMUNE TABLE */
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: auto;
+    margin-bottom: 32px;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    background: var(--surface2);
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+  }
+  thead th:hover { color: var(--accent); }
+  thead th .sort-arrow { opacity: 0.4; margin-left: 4px; }
+  thead th.sorted .sort-arrow { opacity: 1; color: var(--accent); }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 10px 14px; font-size: 12px; white-space: nowrap; }
+  .td-commune { font-family: var(--sans); font-weight: 600; font-size: 13px; }
+  .td-num { text-align: right; font-variant-numeric: tabular-nums; }
+  .td-bar { width: 120px; }
+  .mini-bar { height: 4px; background: var(--border); position: relative; }
+  .mini-bar-fill { height: 100%; background: var(--accent); transition: width 0.3s; }
+  .tag {
+    display: inline-block;
+    padding: 2px 6px;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .tag-maison { background: rgba(91,141,238,0.15); color: var(--accent2); }
+  .tag-appart { background: rgba(232,197,71,0.12); color: var(--accent); }
+  .tag-terrain { background: rgba(74,222,128,0.12); color: var(--success); }
+  .tag-autre { background: rgba(248,113,113,0.12); color: var(--danger); }
+
+  /* TYPE BREAKDOWN */
+  .type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 32px;
+  }
+  .type-card {
+    background: var(--surface);
+    padding: 20px;
+  }
+  .type-label { font-family: var(--sans); font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .type-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 11px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .type-row:last-child { border-bottom: none; }
+  .type-row-label { color: var(--muted); }
+  .type-row-val { font-variant-numeric: tabular-nums; }
+
+  /* DISTRIBUTION BAR */
+  .dist-wrap { margin-bottom: 32px; }
+  .dist-row { margin-bottom: 16px; }
+  .dist-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 11px; }
+  .dist-bar-outer { height: 24px; background: var(--surface); border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .dist-bar-inner { height: 100%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; padding-left: 8px; font-size: 10px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+
+  /* EXPORT SECTION */
+  .export-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-top: 32px;
+  }
+  .export-title { font-family: var(--sans); font-weight: 700; margin-bottom: 8px; font-size: 13px; }
+  .export-sub { color: var(--muted); font-size: 11px; margin-bottom: 16px; line-height: 1.6; }
+  .export-btns { display: flex; gap: 10px; flex-wrap: wrap; }
+  pre#jsonPreview {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 16px;
+    font-size: 11px;
+    color: var(--muted);
+    overflow: auto;
+    max-height: 300px;
+    margin-top: 16px;
+    display: none;
+    line-height: 1.6;
+  }
+  pre#jsonPreview.visible { display: block; }
+
+  /* TIMELINE */
+  .timeline-wrap { margin-bottom: 32px; }
+  .timeline-chart { display: flex; align-items: flex-end; gap: 3px; height: 80px; padding: 0 2px; }
+  .timeline-bar { flex: 1; background: var(--surface2); border: 1px solid var(--border); position: relative; transition: all 0.2s; cursor: default; min-width: 8px; }
+  .timeline-bar:hover { background: rgba(232,197,71,0.2); border-color: var(--accent); }
+  .timeline-bar:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 4px 8px;
+    font-size: 10px;
+    white-space: nowrap;
+    color: var(--text);
+    z-index: 10;
+  }
+  .timeline-labels { display: flex; justify-content: space-between; margin-top: 6px; font-size: 10px; color: var(--muted); }
+
+  /* ANOMALY ALERTS */
+  .alert {
+    border-left: 3px solid var(--danger);
+    background: rgba(248,113,113,0.06);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .alert strong { color: var(--danger); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    header { flex-direction: column; gap: 12px; align-items: flex-start; }
+    .summary-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="logo">Su<span>Prealty</span> · DVF Analyzer</div>
+    <div class="badge">Analyse Foncière</div>
+  </header>
+
+  <!-- DROP ZONE -->
+  <div id="dropzone" onclick="document.getElementById('fileInput').click()">
+    <div class="drop-icon">⬡</div>
+    <div class="drop-title">Déposer un export DVF (.csv)</div>
+    <div class="drop-sub">
+      Fichier téléchargeable sur <strong>data.gouv.fr/dvf</strong> ou <strong>app.dvf.etalab.gouv.fr</strong><br>
+      Format standard DVF — toutes colonnes acceptées
+    </div>
+    <input type="file" id="fileInput" accept=".csv,.txt">
+  </div>
+
+  <!-- FILTERS -->
+  <div id="filters">
+    <div class="filter-group">
+      <div class="filter-label">Commune / Ville</div>
+      <input type="text" id="filterCommune" placeholder="Ex : ANNECY">
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Type de bien</div>
+      <select id="filterType">
+        <option value="">Tous les types</option>
+        <option value="Maison">Maison</option>
+        <option value="Appartement">Appartement</option>
+        <option value="Terrain">Terrain</option>
+        <option value="Local industriel">Local industriel</option>
+        <option value="Dépendance">Dépendance</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Période</div>
+      <select id="filterPeriode">
+        <option value="">Toutes années</option>
+        <option value="2024">2024</option>
+        <option value="2023">2023</option>
+        <option value="2022">2022</option>
+        <option value="2021">2021</option>
+        <option value="2020">2020</option>
+        <option value="2019">2019</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Surface min m²</div>
+      <input type="text" id="filterSurfMin" placeholder="Ex : 20">
+    </div>
+    <div class="filter-group">
+      <div class="filter-label">Surface max m²</div>
+      <input type="text" id="filterSurfMax" placeholder="Ex : 200">
+    </div>
+    <button class="btn" onclick="analyzeData()">Analyser</button>
+    <button class="btn-ghost" onclick="resetFilters()">Réinitialiser</button>
+  </div>
+
+  <!-- STATUS -->
+  <div id="statusBar">
+    <div class="status-dot"></div>
+    <span id="statusText">Chargement...</span>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+
+    <!-- SUMMARY -->
+    <div class="section-header">
+      <div class="section-title">Vue d'ensemble</div>
+      <div class="section-count" id="totalCount"></div>
+    </div>
+    <div class="summary-grid" id="summaryGrid"></div>
+
+    <!-- TIMELINE -->
+    <div class="section-header" style="margin-top:8px;">
+      <div class="section-title">Volume mensuel</div>
+    </div>
+    <div class="timeline-wrap">
+      <div class="timeline-chart" id="timelineChart"></div>
+      <div class="timeline-labels" id="timelineLabels"></div>
+    </div>
+
+    <!-- TYPE BREAKDOWN -->
+    <div class="section-header">
+      <div class="section-title">Par type de bien</div>
+    </div>
+    <div class="type-grid" id="typeGrid"></div>
+
+    <!-- DISTRIBUTION -->
+    <div class="section-header">
+      <div class="section-title">Distribution prix m²</div>
+    </div>
+    <div class="dist-wrap" id="distWrap"></div>
+
+    <!-- COMMUNE TABLE -->
+    <div class="section-header">
+      <div class="section-title">Analyse par commune</div>
+    </div>
+    <div class="table-wrap">
+      <table id="communeTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('commune')">Commune <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('nb')" class="td-num">Transactions <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('prixMed')" class="td-num">Prix médian <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('prixM2')" class="td-num">€/m² médian <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('prixMin')" class="td-num">€/m² min <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('prixMax')" class="td-num">€/m² max <span class="sort-arrow">↕</span></th>
+            <th onclick="sortTable('surfMed')" class="td-num">Surface méd. <span class="sort-arrow">↕</span></th>
+            <th>Types dominants</th>
+            <th class="td-bar">Liquidité</th>
+          </tr>
+        </thead>
+        <tbody id="communeBody"></tbody>
+      </table>
+    </div>
+
+    <!-- ANOMALIES -->
+    <div id="anomaliesSection" style="display:none; margin-bottom:32px;">
+      <div class="section-header">
+        <div class="section-title">Signaux à vérifier</div>
+      </div>
+      <div id="anomaliesList"></div>
+    </div>
+
+    <!-- EXPORT -->
+    <div class="export-section">
+      <div class="export-title">Export Supabase / SuPrealty</div>
+      <div class="export-sub">
+        Génère un JSON structuré compatible avec les tables <strong>ANALYSE_SECTEUR</strong>, <strong>PRIX_MARCHE</strong> et <strong>TRANSACTIONS_DVF</strong>.
+        Prêt à être inséré via l'API Supabase ou WeWeb.
+      </div>
+      <div class="export-btns">
+        <button class="btn" onclick="exportJSON()">Exporter JSON Supabase</button>
+        <button class="btn-ghost" onclick="previewJSON()">Aperçu JSON</button>
+        <button class="btn-ghost" onclick="exportCSV()">Exporter CSV synthèse</button>
+      </div>
+      <pre id="jsonPreview"></pre>
+    </div>
+
+  </div><!-- /results -->
+</div><!-- /app -->
+
+<script>
+// ───────────────────────────────────────────────────────────
+// GLOBAL STATE
+// ───────────────────────────────────────────────────────────
+let rawRows = [];
+let filteredRows = [];
+let sortCol = 'nb';
+let sortDir = -1;
+
+// ───────────────────────────────────────────────────────────
+// DVF COLUMN MAPPING (official format + variants)
+// ───────────────────────────────────────────────────────────
+const COL_MAP = {
+  date: ['date_mutation','date_transaction','Date mutation','Date de mutation'],
+  commune: ['nom_commune','commune','Commune','libelle_commune'],
+  cp: ['code_postal','Code postal','cp'],
+  dept: ['code_departement','departement'],
+  type: ['type_local','type_bien','Type local'],
+  surface: ['surface_reelle_bati','surface_m2','surface_bati','Surface bâtie','surface'],
+  surfaceTerrain: ['surface_terrain','Surface terrain'],
+  prix: ['valeur_fonciere','prix','Prix','valeur_fonciere_totale'],
+  pieces: ['nombre_pieces_principales','nb_pieces','Nombre de pièces'],
+  lots: ['nombre_lots','nb_lots'],
+  nature: ['nature_mutation','Nature mutation'],
+  section: ['section','Section cadastrale'],
+  adresse: ['adresse_numero','numero_voie','adresse'],
+  idVente: ['id_mutation','identifiant_mutation'],
+};
+
+function findCol(row, keys) {
+  const headers = Object.keys(row);
+  for (const k of keys) {
+    const found = headers.find(h => h.trim().toLowerCase() === k.toLowerCase());
+    if (found !== undefined && row[found] !== undefined && row[found] !== '') return row[found];
+  }
+  return null;
+}
+
+function parseNum(v) {
+  if (v === null || v === undefined || v === '') return null;
+  const n = parseFloat(String(v).replace(',','.').replace(/\s/g,''));
+  return isNaN(n) ? null : n;
+}
+
+// ───────────────────────────────────────────────────────────
+// CSV PARSING
+// ───────────────────────────────────────────────────────────
+function parseCSV(text) {
+  // Auto-detect delimiter
+  const first = text.slice(0, 500);
+  const delimiters = [',',';','|','\t'];
+  const delim = delimiters.reduce((best, d) => {
+    const count = (first.match(new RegExp('\\' + d, 'g')) || []).length;
+    return count > best.count ? { delim: d, count } : best;
+  }, { delim: ',', count: 0 }).delim;
+
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+
+  const headers = lines[0].split(delim).map(h => h.trim().replace(/^["']|["']$/g,''));
+  const rows = [];
+
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(delim).map(v => v.trim().replace(/^["']|["']$/g,''));
+    if (vals.length < 3) continue;
+    const row = {};
+    headers.forEach((h, idx) => { row[h] = vals[idx] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+// ───────────────────────────────────────────────────────────
+// NORMALIZE ROW
+// ───────────────────────────────────────────────────────────
+function normalizeRow(r) {
+  const date = findCol(r, COL_MAP.date);
+  const prix = parseNum(findCol(r, COL_MAP.prix));
+  const surface = parseNum(findCol(r, COL_MAP.surface));
+  const surfTerrain = parseNum(findCol(r, COL_MAP.surfaceTerrain));
+  const type = findCol(r, COL_MAP.type) || '';
+  const commune = (findCol(r, COL_MAP.commune) || '').toUpperCase().trim();
+  const cp = findCol(r, COL_MAP.cp) || '';
+  const pieces = parseNum(findCol(r, COL_MAP.pieces));
+  const lots = parseNum(findCol(r, COL_MAP.lots));
+  const nature = findCol(r, COL_MAP.nature) || '';
+  const idVente = findCol(r, COL_MAP.idVente) || '';
+  const section = findCol(r, COL_MAP.section) || '';
+
+  // Effective surface: bati or terrain
+  const effSurface = type === 'Terrain' ? surfTerrain : (surface || surfTerrain);
+  const prixM2 = (prix && effSurface && effSurface > 0) ? Math.round(prix / effSurface) : null;
+
+  // Parse date
+  let year = null, month = null, dateStr = null;
+  if (date) {
+    const m = date.match(/(\d{4})-(\d{2})-(\d{2})|(\d{2})\/(\d{2})\/(\d{4})/);
+    if (m) {
+      year = parseInt(m[1] || m[6]);
+      month = parseInt(m[2] || m[5]);
+      dateStr = date;
+    }
+  }
+
+  return { commune, cp, type, prix, surface, surfTerrain, effSurface, prixM2, pieces, lots, year, month, dateStr, nature, idVente, section };
+}
+
+// ───────────────────────────────────────────────────────────
+// FILE LOAD
+// ───────────────────────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  loadFile(file);
+});
+
+const dropzone = document.getElementById('dropzone');
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+dropzone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropzone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+function loadFile(file) {
+  setStatus(`Chargement : ${file.name} (${(file.size/1024/1024).toFixed(1)} Mo)…`);
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    setStatus('Parsing CSV…');
+    setTimeout(() => {
+      const rows = parseCSV(e.target.result);
+      rawRows = rows.map(normalizeRow).filter(r => r.commune && r.prix);
+      setStatus(`${rawRows.length.toLocaleString('fr')} transactions chargées — Configurez les filtres puis cliquez Analyser`);
+      document.getElementById('filters').classList.add('visible');
+      // Auto-populate year filter
+      const years = [...new Set(rawRows.map(r => r.year).filter(Boolean))].sort((a,b)=>b-a);
+      const sel = document.getElementById('filterPeriode');
+      sel.innerHTML = '<option value="">Toutes années</option>';
+      years.forEach(y => sel.innerHTML += `<option value="${y}">${y}</option>`);
+      analyzeData();
+    }, 50);
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function setStatus(msg) {
+  document.getElementById('statusText').textContent = msg;
+  document.getElementById('statusBar').classList.add('visible');
+}
+
+// ───────────────────────────────────────────────────────────
+// FILTER & ANALYZE
+// ───────────────────────────────────────────────────────────
+function resetFilters() {
+  document.getElementById('filterCommune').value = '';
+  document.getElementById('filterType').value = '';
+  document.getElementById('filterPeriode').value = '';
+  document.getElementById('filterSurfMin').value = '';
+  document.getElementById('filterSurfMax').value = '';
+  if (rawRows.length) analyzeData();
+}
+
+function analyzeData() {
+  if (!rawRows.length) return;
+
+  const commune = document.getElementById('filterCommune').value.toUpperCase().trim();
+  const type = document.getElementById('filterType').value;
+  const periode = document.getElementById('filterPeriode').value;
+  const surfMin = parseNum(document.getElementById('filterSurfMin').value);
+  const surfMax = parseNum(document.getElementById('filterSurfMax').value);
+
+  filteredRows = rawRows.filter(r => {
+    if (commune && !r.commune.includes(commune)) return false;
+    if (type && r.type !== type) return false;
+    if (periode && String(r.year) !== periode) return false;
+    if (surfMin && r.effSurface < surfMin) return false;
+    if (surfMax && r.effSurface > surfMax) return false;
+    return true;
+  });
+
+  setStatus(`Analyse sur ${filteredRows.length.toLocaleString('fr')} transactions filtrées`);
+  renderResults();
+  document.getElementById('results').classList.add('visible');
+}
+
+// ───────────────────────────────────────────────────────────
+// STATS HELPERS
+// ───────────────────────────────────────────────────────────
+function median(arr) {
+  if (!arr.length) return null;
+  const s = [...arr].sort((a,b) => a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+function avg(arr) { return arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null; }
+function percentile(arr, p) {
+  const s = [...arr].sort((a,b)=>a-b);
+  const idx = Math.floor(p/100 * s.length);
+  return s[Math.min(idx, s.length-1)];
+}
+function fmt(n, suffix='') {
+  if (n===null||n===undefined) return '—';
+  return Math.round(n).toLocaleString('fr') + suffix;
+}
+
+// ───────────────────────────────────────────────────────────
+// RENDER RESULTS
+// ───────────────────────────────────────────────────────────
+function renderResults() {
+  const rows = filteredRows;
+  if (!rows.length) { setStatus('Aucune transaction après filtrage.'); return; }
+
+  const prix = rows.map(r=>r.prix).filter(Boolean);
+  const prixM2 = rows.map(r=>r.prixM2).filter(Boolean);
+  const surfaces = rows.map(r=>r.effSurface).filter(Boolean);
+
+  // SUMMARY
+  document.getElementById('totalCount').textContent = `${rows.length.toLocaleString('fr')} transactions`;
+  const communes = [...new Set(rows.map(r=>r.commune))];
+  const years = [...new Set(rows.map(r=>r.year).filter(Boolean))];
+
+  document.getElementById('summaryGrid').innerHTML = [
+    { label: 'Transactions', value: fmt(rows.length), sub: `sur ${communes.length} communes` },
+    { label: 'Prix médian', value: fmt(median(prix), ' €'), sub: `moy. ${fmt(avg(prix), ' €')}` },
+    { label: 'Prix/m² médian', value: fmt(median(prixM2), ' €'), sub: `moy. ${fmt(avg(prixM2), ' €')}` },
+    { label: 'Surface méd.', value: fmt(median(surfaces), ' m²'), sub: `moy. ${fmt(avg(surfaces), ' m²')}` },
+    { label: 'Prix min', value: fmt(Math.min(...prix), ' €'), sub: 'transaction la + basse' },
+    { label: 'Prix max', value: fmt(Math.max(...prix), ' €'), sub: 'transaction la + haute' },
+    { label: '€/m² P10', value: fmt(percentile(prixM2,10), ' €'), sub: 'bas de marché' },
+    { label: '€/m² P90', value: fmt(percentile(prixM2,90), ' €'), sub: 'haut de marché' },
+    { label: 'Période', value: years.length > 1 ? `${Math.min(...years)}–${Math.max(...years)}` : (years[0]||'—'), sub: `${years.length} année(s)` },
+  ].map(s => `<div class="stat-card">
+    <div class="stat-label">${s.label}</div>
+    <div class="stat-value">${s.value}</div>
+    <div class="stat-sub">${s.sub}</div>
+  </div>`).join('');
+
+  // TIMELINE
+  renderTimeline(rows);
+
+  // BY TYPE
+  renderTypeBreakdown(rows);
+
+  // DISTRIBUTION
+  renderDistribution(prixM2);
+
+  // COMMUNE TABLE
+  renderCommuneTable(rows, communes);
+
+  // ANOMALIES
+  detectAnomalies(rows, prixM2);
+}
+
+function renderTimeline(rows) {
+  const byMonth = {};
+  rows.forEach(r => {
+    if (!r.year || !r.month) return;
+    const key = `${r.year}-${String(r.month).padStart(2,'0')}`;
+    byMonth[key] = (byMonth[key] || 0) + 1;
+  });
+  const keys = Object.keys(byMonth).sort();
+  if (!keys.length) return;
+  const maxVal = Math.max(...Object.values(byMonth));
+
+  const chart = document.getElementById('timelineChart');
+  const labels = document.getElementById('timelineLabels');
+  chart.innerHTML = '';
+  keys.forEach(k => {
+    const h = Math.round((byMonth[k]/maxVal)*100);
+    const bar = document.createElement('div');
+    bar.className = 'timeline-bar';
+    bar.style.height = h+'%';
+    bar.dataset.tip = `${k}: ${byMonth[k]} ventes`;
+    chart.appendChild(bar);
+  });
+  labels.textContent = '';
+  if (keys.length) {
+    labels.innerHTML = `<span>${keys[0]}</span><span>${keys[Math.floor(keys.length/2)]}</span><span>${keys[keys.length-1]}</span>`;
+  }
+}
+
+function renderTypeBreakdown(rows) {
+  const types = {};
+  rows.forEach(r => {
+    const t = r.type || 'Inconnu';
+    if (!types[t]) types[t] = [];
+    types[t].push(r);
+  });
+
+  const colorMap = { 'Maison':'#5b8dee', 'Appartement':'#e8c547', 'Terrain':'#4ade80', 'Local industriel':'#f87171', 'Dépendance':'#a78bfa' };
+
+  const html = Object.entries(types)
+    .sort((a,b) => b[1].length - a[1].length)
+    .map(([type, trows]) => {
+      const pm2 = trows.map(r=>r.prixM2).filter(Boolean);
+      const px = trows.map(r=>r.prix).filter(Boolean);
+      const sf = trows.map(r=>r.effSurface).filter(Boolean);
+      const color = colorMap[type] || '#6b7280';
+      const pct = Math.round(trows.length/rows.length*100);
+      return `<div class="type-card">
+        <div class="type-label" style="color:${color}">${type} <small style="color:var(--muted);font-size:11px;font-weight:400">${pct}% — ${trows.length} ventes</small></div>
+        <div class="type-row"><span class="type-row-label">Prix médian</span><span class="type-row-val">${fmt(median(px),' €')}</span></div>
+        <div class="type-row"><span class="type-row-label">€/m² médian</span><span class="type-row-val">${fmt(median(pm2),' €')}</span></div>
+        <div class="type-row"><span class="type-row-label">€/m² P10</span><span class="type-row-val">${fmt(percentile(pm2,10),' €')}</span></div>
+        <div class="type-row"><span class="type-row-label">€/m² P90</span><span class="type-row-val">${fmt(percentile(pm2,90),' €')}</span></div>
+        <div class="type-row"><span class="type-row-label">Surface méd.</span><span class="type-row-val">${fmt(median(sf),' m²')}</span></div>
+        <div class="type-row"><span class="type-row-label">Prix min</span><span class="type-row-val">${fmt(px.length?Math.min(...px):null,' €')}</span></div>
+        <div class="type-row"><span class="type-row-label">Prix max</span><span class="type-row-val">${fmt(px.length?Math.max(...px):null,' €')}</span></div>
+      </div>`;
+    }).join('');
+  document.getElementById('typeGrid').innerHTML = html;
+}
+
+function renderDistribution(prixM2) {
+  if (!prixM2.length) return;
+  const min = Math.min(...prixM2);
+  const max = Math.max(...prixM2);
+  const range = max - min;
+  const buckets = 10;
+  const step = range / buckets;
+  const counts = Array(buckets).fill(0);
+  prixM2.forEach(v => {
+    const idx = Math.min(Math.floor((v-min)/step), buckets-1);
+    counts[idx]++;
+  });
+  const maxCount = Math.max(...counts);
+  const colors = ['#5b8dee','#6a9ff0','#7db5f0','#8ecbf0','#9fdaf0','#e8c547','#f0d060','#f0b847','#f09030','#f87171'];
+
+  const html = counts.map((c, i) => {
+    const from = Math.round(min + i*step);
+    const to = Math.round(min + (i+1)*step);
+    const pct = Math.round(c/maxCount*100);
+    const vpct = Math.round(c/prixM2.length*100);
+    return `<div class="dist-row">
+      <div class="dist-header">
+        <span style="color:var(--muted)">${fmt(from,' €')} – ${fmt(to,' €')}</span>
+        <span style="color:var(--text)">${c} transaction${c>1?'s':''} <span style="color:var(--muted)">(${vpct}%)</span></span>
+      </div>
+      <div class="dist-bar-outer">
+        <div class="dist-bar-inner" style="width:${pct}%;background:${colors[i]};color:#000;font-size:10px;">${vpct>5?vpct+'%':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('distWrap').innerHTML = html;
+}
+
+function renderCommuneTable(rows, communes) {
+  const maxTx = Math.max(...communes.map(c => rows.filter(r=>r.commune===c).length));
+
+  const data = communes.map(c => {
+    const crows = rows.filter(r => r.commune === c);
+    const pm2 = crows.map(r=>r.prixM2).filter(Boolean);
+    const px = crows.map(r=>r.prix).filter(Boolean);
+    const sf = crows.map(r=>r.effSurface).filter(Boolean);
+    const types = {};
+    crows.forEach(r => { types[r.type] = (types[r.type]||0)+1; });
+    const topTypes = Object.entries(types).sort((a,b)=>b[1]-a[1]).slice(0,3);
+
+    return {
+      commune: c,
+      cp: crows[0].cp,
+      nb: crows.length,
+      prixMed: median(px),
+      prixM2: median(pm2),
+      prixMin: pm2.length ? Math.min(...pm2) : null,
+      prixMax: pm2.length ? Math.max(...pm2) : null,
+      surfMed: median(sf),
+      topTypes,
+      liquidPct: Math.round(crows.length/maxTx*100),
+    };
+  });
+
+  window._communeData = data;
+  sortAndRenderTable();
+}
+
+function sortAndRenderTable() {
+  const data = [...window._communeData];
+  data.sort((a,b) => {
+    const av = a[sortCol];
+    const bv = b[sortCol];
+    if (typeof av === 'string') return sortDir * av.localeCompare(bv);
+    return sortDir * ((av||0) - (bv||0));
+  });
+
+  const tagClass = {
+    'Maison':'tag-maison','Appartement':'tag-appart','Terrain':'tag-terrain'
+  };
+
+  const html = data.map(d => `
+    <tr>
+      <td class="td-commune">${d.commune} <small style="color:var(--muted)">${d.cp}</small></td>
+      <td class="td-num">${d.nb}</td>
+      <td class="td-num">${fmt(d.prixMed,' €')}</td>
+      <td class="td-num" style="color:var(--accent)">${fmt(d.prixM2,' €')}</td>
+      <td class="td-num" style="color:var(--success)">${fmt(d.prixMin,' €')}</td>
+      <td class="td-num" style="color:var(--danger)">${fmt(d.prixMax,' €')}</td>
+      <td class="td-num">${fmt(d.surfMed,' m²')}</td>
+      <td>${d.topTypes.map(([t,n]) => `<span class="tag ${tagClass[t]||'tag-autre'}">${t} (${n})</span>`).join(' ')}</td>
+      <td class="td-bar"><div class="mini-bar"><div class="mini-bar-fill" style="width:${d.liquidPct}%"></div></div></td>
+    </tr>`).join('');
+
+  document.getElementById('communeBody').innerHTML = html;
+
+  document.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('sorted');
+    const arrow = th.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = '↕';
+  });
+}
+
+function sortTable(col) {
+  if (sortCol === col) sortDir *= -1;
+  else { sortCol = col; sortDir = -1; }
+  sortAndRenderTable();
+}
+
+function detectAnomalies(rows, prixM2) {
+  if (!prixM2.length) return;
+  const alerts = [];
+  const med = median(prixM2);
+  const low = percentile(prixM2, 5);
+  const high = percentile(prixM2, 95);
+
+  const extreme = rows.filter(r => r.prixM2 && (r.prixM2 < low*0.3 || r.prixM2 > high*3));
+  if (extreme.length) alerts.push(`<strong>${extreme.length} transaction(s)</strong> avec prix/m² extrêmes (< ${fmt(low*0.3,' €')} ou > ${fmt(high*3,' €')}) — probables erreurs de saisie ou lots multiples non décomposés.`);
+
+  const noSurf = rows.filter(r => !r.effSurface);
+  if (noSurf.length > rows.length * 0.1) alerts.push(`<strong>${noSurf.length} transactions</strong> sans surface renseignée (${Math.round(noSurf.length/rows.length*100)}%) — le calcul €/m² est incomplet.`);
+
+  const noDate = rows.filter(r => !r.year);
+  if (noDate.length > 20) alerts.push(`<strong>${noDate.length} transactions</strong> sans date lisible — vérifier le format de la colonne date du fichier source.`);
+
+  const section = document.getElementById('anomaliesSection');
+  const list = document.getElementById('anomaliesList');
+  if (alerts.length) {
+    list.innerHTML = alerts.map(a => `<div class="alert">${a}</div>`).join('');
+    section.style.display = 'block';
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+// ───────────────────────────────────────────────────────────
+// EXPORT
+// ───────────────────────────────────────────────────────────
+function buildJSON() {
+  if (!filteredRows.length || !window._communeData) return {};
+
+  const rows = filteredRows;
+  const pm2 = rows.map(r=>r.prixM2).filter(Boolean);
+  const px = rows.map(r=>r.prix).filter(Boolean);
+  const sf = rows.map(r=>r.effSurface).filter(Boolean);
+
+  const byType = {};
+  rows.forEach(r => {
+    const t = r.type || 'Inconnu';
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(r);
+  });
+
+  return {
+    meta: {
+      generated_at: new Date().toISOString(),
+      source: 'DVF - data.gouv.fr',
+      transactions_count: rows.length,
+      communes: [...new Set(rows.map(r=>r.commune))].length,
+    },
+    analyse_secteur: {
+      nb_ventes_total: rows.length,
+      prix_m2_median_global: Math.round(median(pm2)),
+      prix_m2_moyen_global: Math.round(avg(pm2)),
+      prix_m2_p10: Math.round(percentile(pm2, 10)),
+      prix_m2_p90: Math.round(percentile(pm2, 90)),
+      prix_median: Math.round(median(px)),
+      surface_mediane: Math.round(median(sf)),
+    },
+    prix_marche: Object.entries(byType).map(([type_bien, trows]) => {
+      const tp = trows.map(r=>r.prixM2).filter(Boolean);
+      const tx = trows.map(r=>r.prix).filter(Boolean);
+      return {
+        type_bien: type_bien.toLowerCase().replace(/é/g,'e').replace(/ /g,'_'),
+        nb_transactions: trows.length,
+        prix_m2_bas: Math.round(percentile(tp, 10)),
+        prix_m2_moyen: Math.round(median(tp)),
+        prix_m2_haut: Math.round(percentile(tp, 90)),
+        prix_median: Math.round(median(tx)),
+        surface_mediane: Math.round(median(trows.map(r=>r.effSurface).filter(Boolean))),
+      };
+    }),
+    communes: window._communeData.map(c => ({
+      commune: c.commune,
+      code_postal: c.cp,
+      nb_ventes_12mois: c.nb,
+      prix_m2_median: Math.round(c.prixM2),
+      prix_m2_min: Math.round(c.prixMin),
+      prix_m2_max: Math.round(c.prixMax),
+      prix_median: Math.round(c.prixMed),
+      surface_mediane: Math.round(c.surfMed),
+    })),
+  };
+}
+
+function exportJSON() {
+  const data = buildJSON();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dvf-suprealty-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+}
+
+function previewJSON() {
+  const pre = document.getElementById('jsonPreview');
+  if (pre.classList.contains('visible')) {
+    pre.classList.remove('visible');
+    return;
+  }
+  const data = buildJSON();
+  pre.textContent = JSON.stringify(data, null, 2);
+  pre.classList.add('visible');
+}
+
+function exportCSV() {
+  if (!window._communeData) return;
+  const headers = ['Commune','CP','Transactions','Prix médian €','€/m² médian','€/m² min','€/m² max','Surface méd m²'];
+  const rows = window._communeData.map(c => [
+    c.commune, c.cp, c.nb,
+    Math.round(c.prixMed)||'', Math.round(c.prixM2)||'',
+    Math.round(c.prixMin)||'', Math.round(c.prixMax)||'',
+    Math.round(c.surfMed)||''
+  ]);
+  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `dvf-synthese-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
